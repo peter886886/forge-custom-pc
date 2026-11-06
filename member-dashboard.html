@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Account | FORGE</title>
+<meta name="description" content="FORGE member dashboard.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section><div class="wrap sidebar">
+ <aside class="side card"><p class="eyebrow">Member</p><h3 id="nm"></h3><br><a class="on" href="#builds">Saved Builds</a><a href="#orders">Orders</a><a href="builder.html">New 3D Build</a><a href="#" id="out">Log Out</a></aside>
+ <div><h2 id="builds">Saved <span class="grad">builds</span></h2><div class="grid" id="bl"></div>
+  <h2 id="orders" style="margin-top:40px">Order history</h2><div class="tblwrap"><table><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody id="ol"></tbody></table></div></div>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const U=user();if(!U||U.role!=='customer'){location.href='login.html'};
+$('#nm').textContent=U?U.name:'';$('#out').onclick=e=>{e.preventDefault();localStorage.removeItem('forgeUser');location.href='index.html'};
+const B=JSON.parse(localStorage.getItem('forgeBuilds')||'[]'),O=JSON.parse(localStorage.getItem('forgeOrders')||'[]');
+$('#bl').innerHTML=B.map(b=>`<div class="card"><img src="${b.img}" alt="Saved build" style="border-radius:10px;margin-bottom:10px"><b class="price">${money(b.total)}</b><p class="mut">${b.items.length} parts · ${b.date}</p></div>`).join('')||'<p class="mut">No saved builds yet. <a href="builder.html">Open the 3D Builder</a> and press Save.</p>';
+$('#ol').innerHTML=O.map(o=>`<tr><td>${esc(o.id)}</td><td>${o.date}</td><td>${esc(o.items).slice(0,50)}</td><td>${money(o.total)}</td><td><span class="status s-w">Building</span></td></tr>`).join('')||'<tr><td colspan="5" class="mut">No orders yet.</td></tr>';</script>
+</body>
+</html>

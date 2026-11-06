@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login | FORGE</title>
+<meta name="description" content="Customer and staff login for FORGE.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap" style="max-width:440px">
+ <div class="card reveal">
+  <h2 class="center">Welcome <span class="grad">back</span></h2>
+  <div class="tabs" style="margin-top:16px"><button class="on" data-r="customer">Customer</button><button data-r="staff">Staff</button></div>
+  <form id="lf" novalidate>
+   <div class="field"><label for="u" id="ul">Email</label><input id="u" data-rule="req" autocomplete="username"><div class="err"></div></div>
+   <div class="field"><label for="p">Password</label><div style="position:relative"><input type="password" id="p" data-rule="req" autocomplete="current-password"><button type="button" id="eye" style="position:absolute;right:10px;top:10px;background:none;border:0;cursor:pointer" aria-label="Show password">👁</button></div><div class="err"></div></div>
+   <div style="display:flex;justify-content:space-between;margin-bottom:16px"><label class="chk"><input type="checkbox" id="rem"> Remember me</label><a href="#" onclick="toast('A reset link has been sent (demo)');return false">Forgot?</a></div>
+   <button class="btn solid" style="width:100%;justify-content:center" id="go">Log in</button>
+   <p class="err center" id="msg" style="margin-top:10px"></p>
+  </form>
+  <p class="center mut" id="reg">New here? <a href="register.html">Create an account</a></p>
+  <p class="center mut" style="font-size:.78rem;margin-top:12px">Demo — Customer: <b>demo@forge.hk / Forge2026</b><br>Staff: <b>staff01 / Admin@2026</b></p>
+ </div></div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>let role='customer',fails=+sessionStorage.getItem('fails')||0;
+$$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');role=b.dataset.r;$('#ul').textContent=role==='staff'?'Staff ID':'Email';$('#reg').style.display=role==='staff'?'none':'block'});
+$('#eye').onclick=()=>{const p=$('#p');p.type=p.type==='password'?'text':'password'};
+$('#lf').onsubmit=e=>{e.preventDefault();
+ const lock=+sessionStorage.getItem('lockUntil')||0;if(Date.now()<lock){$('#msg').textContent='Too many attempts. Try again in '+Math.ceil((lock-Date.now())/1000)+'s.';return}
+ if(!validate(e.target))return;
+ const u=$('#u').value.trim(),p=$('#p').value,reg=JSON.parse(localStorage.getItem('forgeReg')||'null');
+ let ok=null;
+ if(role==='staff'&&u==='staff01'&&p==='Admin@2026')ok={name:'Staff 01',role:'staff'};
+ if(role==='customer'&&((u==='demo@forge.hk'&&p==='Forge2026')||(reg&&reg.email===u)))ok={name:reg&&reg.email===u?reg.name:'Demo User',email:u,role:'customer'};
+ if(!ok){fails++;sessionStorage.setItem('fails',fails);if(fails>=3){sessionStorage.setItem('lockUntil',Date.now()+30000);fails=0;sessionStorage.setItem('fails',0)}
+  $('#msg').textContent='Invalid credentials.'+(fails?' '+(3-fails)+' attempt(s) left.':' Locked for 30s.');return}
+ sessionStorage.setItem('fails',0);localStorage.setItem('forgeUser',JSON.stringify(ok));toast('Welcome, '+ok.name);
+ setTimeout(()=>location.href=role==='staff'?'staff-dashboard.html':'member-dashboard.html',600)};</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Register | FORGE</title>
+<meta name="description" content="Become a FORGE member.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Register</p><h1>Join <span class="grad">FORGE</span></h1><p>Members get 5% off every order, saved 3D builds and early access to new hardware.</p></div></section>
+<section style="padding-top:10px"><div class="wrap formbox"><form class="card" id="rf" action="register-result.html" method="get" novalidate>
+ <div class="row"><div class="field"><label for="fname">First name *</label><input id="fname" name="fname" data-rule="req"><div class="err"></div></div>
+ <div class="field"><label for="lname">Last name *</label><input id="lname" name="lname" data-rule="req"><div class="err"></div></div></div>
+ <div class="row"><div class="field"><label for="email">Email *</label><input id="email" name="email" type="email" data-rule="req|email"><div class="err"></div></div>
+ <div class="field"><label for="phone">Phone *</label><input id="phone" name="phone" data-rule="req|phone" placeholder="91234567"><div class="err"></div></div></div>
+ <div class="row"><div class="field"><label for="dob">Date of birth</label><input id="dob" name="dob" type="date"></div>
+ <div class="field"><label for="gender">Gender</label><select id="gender" name="gender"><option value="">Prefer not to say</option><option>Female</option><option>Male</option><option>Other</option></select></div></div>
+ <div class="field"><label for="district">District</label><select id="district" name="district"><option>Hong Kong Island</option><option>Kowloon</option><option>New Territories</option><option>Macau</option></select></div>
+ <div class="row"><div class="field"><label for="pw">Password *</label><input id="pw" type="password" data-rule="req|pw"><div class="meter"><i id="mt"></i></div><div class="err"></div></div>
+ <div class="field"><label for="pw2">Confirm password *</label><input id="pw2" type="password" data-rule="req|match:pw"><div class="err"></div></div></div>
+ <div class="field"><label>I mainly use my PC for</label><div style="display:flex;gap:16px;flex-wrap:wrap">
+  <label class="chk"><input type="checkbox" name="use" value="Gaming"> Gaming</label><label class="chk"><input type="checkbox" name="use" value="Video editing"> Video editing</label><label class="chk"><input type="checkbox" name="use" value="Study"> Study</label><label class="chk"><input type="checkbox" name="use" value="AI / Coding"> AI / Coding</label></div></div>
+ <label class="chk"><input type="checkbox" name="newsletter" value="Yes"> Send me deals and build guides</label>
+ <label class="chk" style="margin:10px 0 20px"><input type="checkbox" id="terms"> I agree to the Terms & Privacy Policy *</label>
+ <button class="btn solid" style="width:100%;justify-content:center">Create account</button>
+ <p class="mut center" style="font-size:.8rem;margin-top:10px">Already a member? <a href="login.html">Log in</a></p>
+</form></div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const f=$('#rf');liveValidate(f);
+$('#pw').oninput=e=>{const v=e.target.value;let s=0;[/.{8,}/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].forEach(r=>r.test(v)&&s++);const m=$('#mt');m.style.width=s*25+'%';m.style.background=['var(--acc)','var(--acc)','var(--warn)','var(--ok)','var(--ok)'][s]};
+f.onsubmit=e=>{if(!validate(f)){e.preventDefault();toast('Please fix the highlighted fields');return}if(!$('#terms').checked){e.preventDefault();toast('Please accept the terms');return}
+ /* password field has no name attribute, so it is never sent in the URL */
+ localStorage.setItem('forgeReg',JSON.stringify({name:f.fname.value,email:f.email.value}))};</script>
+</body>
+</html>

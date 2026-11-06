@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3D PC Configurator | FORGE</title>
+<meta name="description" content="Configure your custom PC in real-time 3D with automatic compatibility checks, airflow preview, and gaming FPS estimates.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="builder">
+    <!-- left: component steps -->
+    <aside>
+      <p class="eyebrow">3D Configurator</p>
+      <h2>Configure System</h2>
+      <p class="mut" style="margin-bottom:14px;font-size:.875rem">Select components below or click any installed 3D part inside the chassis to inspect it.</p>
+      <div class="filters">
+        <button class="chip sm" data-kit="pb1">Pulse · 1440p</button>
+        <button class="chip sm" data-kit="pb2">Apex · 9800X3D</button>
+        <button class="chip sm" data-kit="pb3">Titan · 5090</button>
+        <button class="chip sm" data-kit="pb4">Studio · Pro</button>
+        <button class="chip sm" id="clear">Reset</button>
+        <button class="chip sm" id="toggleAll">Expand All</button>
+      </div>
+      <div class="steps" id="steps"></div>
+    </aside>
+
+    <!-- right: 3D stage -->
+    <div class="stage" id="stage">
+      <canvas id="pcCanvas" aria-label="3D preview of your PC"></canvas>
+      <div class="stage-header">
+        <div class="stage-top">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <div class="telemetry-pill">Load <b id="tempEst">58°C</b></div>
+            <div class="telemetry-pill">Noise <b id="noiseEst">29 dBA</b></div>
+            <div class="telemetry-pill" id="partInspector">Click part to inspect</div>
+          </div>
+          <div style="pointer-events:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;background:rgba(14,14,14,.88);backdrop-filter:blur(10px);padding:5px 8px;border-radius:8px;border:1px solid var(--line)">
+            <span class="mut" style="font-family:var(--mono);font-size:.68rem;padding:0 2px">Add-ons</span>
+            <button class="chip sm" id="quickAccA1" onclick="quickMod('a1')">Cables +$49</button>
+            <button class="chip sm" id="quickAccA4" onclick="quickMod('a4')">Anti-Sag +$25</button>
+            <button class="chip sm" id="quickAccA2" onclick="quickMod('a2')">LCD Fans +$149</button>
+            <button class="chip sm" id="quickAccA6" onclick="quickMod('a6')">Sensor HUD +$59</button>
+          </div>
+        </div>
+        <div class="tools">
+          <button class="btn sm" id="bExplode" title="Separate all parts">Explode</button>
+          <button class="btn sm" id="bAirflow" title="Preview thermal airflow">Airflow</button>
+          <button class="btn sm" id="bGlass" title="Toggle side glass">Glass</button>
+          <button class="btn sm" id="bSpin" title="Auto rotate">Spin</button>
+          <button class="btn sm" id="bReset">Reset</button>
+          <button class="btn sm" id="bShot">Snapshot</button>
+        </div>
+      </div>
+      <div class="hud">
+        <div class="panel">
+          <small class="mut" style="display:block;font-size:.72rem;font-family:var(--mono)">Internal lighting</small>
+          <div class="swatches" id="rgbSw"></div>
+          <small class="mut" style="display:block;font-size:.72rem;font-family:var(--mono);margin-top:8px">Chassis finish</small>
+          <div class="swatches" id="caseSw"></div>
+        </div>
+        <div class="panel" style="min-width:280px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut" style="font-size:.84rem">Total</span><b class="price" id="tot">$0</b></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin-top:6px"><span class="mut">Power <b id="watt" style="color:var(--txt)">0W</b></span><div class="bar"><i id="wattBar"></i></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin:4px 0"><span class="mut">3DMark</span><div class="bar"><i id="perfBar"></i></div></div>
+          <div class="fps-box">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span class="mut" style="font-size:.72rem">Est. FPS</span>
+              <div class="res-tabs" id="resTabs"><button data-m="1" class="on">1080p</button><button data-m="0.76">1440p</button><button data-m="0.48">4K</button></div>
+            </div>
+            <div class="fps-row"><span>Cyberpunk 2077</span><b id="fps1">— FPS</b></div>
+            <div class="fps-row"><span>Black Myth: Wukong</span><b id="fps2">— FPS</b></div>
+            <div class="fps-row"><span>Valorant</span><b id="fps3">— FPS</b></div>
+          </div>
+          <div class="warnbox" id="warn"></div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn sm" id="bSave">Save</button>
+            <button class="btn sm solid" id="bBuy" style="flex:1">Review Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal" id="shotModal"><div class="card center">
+  <h3>3D Configuration Snapshot</h3><img id="shotImg" alt="Snapshot of your custom PC" style="border-radius:8px;margin:14px 0;border:1px solid var(--line)">
+  <a class="btn solid" id="shotDl" download="forge-build.png">Download PNG</a> <button class="btn" onclick="this.closest('.modal').classList.remove('show')">Close</button>
+</div></div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="models/pc_models_data.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/pc3d.js"></script>
+<script src="js/builder.js"></script>
+</body>
+</html>

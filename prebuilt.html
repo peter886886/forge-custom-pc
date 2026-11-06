@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prebuilt PCs | FORGE</title>
+<meta name="description" content="Ready-to-ship FORGE gaming and workstation PCs.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Shop / Prebuilt</p><h1>Prebuilt <span class="grad">Systems</span></h1><p>Bench-calibrated configurations shipped in 48 hours. Open any system in the 3D Builder to customize components.</p></div></section>
+<section style="padding-top:24px"><div class="wrap grid" id="pb" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div></section>
+<section><div class="wrap"><h2>System Comparison</h2><div class="tblwrap" style="margin-top:16px"><table id="cmp"></table></div></div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const PREBUILT_IMGS = {
+  pb1: ['img/products/pb1.png', 'img/installed/x2.png'],
+  pb2: ['img/products/pb2.png', 'img/installed/g4.png'],
+  pb3: ['img/products/pb3.png', 'img/renders/hero_rig_studio.png'],
+  pb4: ['img/products/pb4.png', 'img/installed/x3.png']
+};
+
+$('#pb').innerHTML = PREBUILT.map(k => `
+  <div class="card reveal" style="display:flex;flex-direction:column">
+    <div class="pimg" style="height:220px;border-radius:8px" title="Hover to inspect internal architecture">
+      <img class="main-photo has-alt" src="${PREBUILT_IMGS[k.id][0]}" style="width:100%;height:100%;object-fit:contain;padding:14px" alt="${k.name}">
+      <img class="alt-photo" src="${PREBUILT_IMGS[k.id][1]}" style="width:100%;height:100%;object-fit:cover" alt="${k.name} Internal Architecture">
+      <span style="position:absolute;bottom:8px;right:8px;z-index:2;font-size:.66rem;font-family:var(--mono);padding:2px 7px;border-radius:5px;background:rgba(14,14,14,.84);border:1px solid var(--line);color:var(--mut);pointer-events:none">Hover · Interior</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+      <span class="tag">${k.tag}</span>
+      <span class="mut" style="font-size:.74rem;font-family:var(--mono)">48h Dispatch</span>
+    </div>
+    <h3 style="margin-top:10px">${k.name}</h3>
+    <p class="mut" style="font-size:.88rem;margin-top:4px">${k.desc}</p>
+    <div style="margin:12px 0 8px;padding:10px 12px;background:#121212;border:1px solid var(--line);border-radius:8px;font-size:.81rem">
+      <span class="mut" style="display:block;font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Included Accessories</span>
+      <span style="color:var(--txt)">${k.parts.filter(id => byId(id)?.cat === 'acc').map(id => byId(id).name).join(', ') || 'Custom Braided Cabling'}</span>
+    </div>
+    <ul class="mut" style="margin:8px 0 18px 18px;font-size:.86rem;display:grid;gap:3px">
+      ${k.parts.filter(i => byId(i) && byId(i).cat !== 'acc' && byId(i).cat !== 'case').map(i => '<li>' + byId(i).name + '</li>').join('')}
+    </ul>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px">
+      <span class="price">${money(kitPrice(k))}</span>
+      <div style="display:flex;gap:6px">
+        <a class="btn sm" href="builder.html?kit=${k.id}">Customize in 3D</a>
+        <a class="btn sm solid" href="order-confirm.html?id=${k.id}&qty=1">Buy</a>
+      </div>
+    </div>
+  </div>
+`).join('');
+const rows=['cpu','gpu','ram','ssd','psu','cool','case','acc'];
+$('#cmp').innerHTML='<tr><th>Component</th>'+PREBUILT.map(k=>`<th>${k.name}</th>`).join('')+'</tr>'+rows.map(c=>`<tr><td>${CATS[c]}</td>${PREBUILT.map(k=>{const list=k.parts.filter(i=>byId(i)?.cat===c).map(i=>byId(i).name);return `<td>${list.length?list.join('<br>'):'—'}</td>`}).join('')}</tr>`).join('')+'<tr><td><b>Price (inc. $99 Assembly)</b></td>'+PREBUILT.map(k=>`<td class="price">${money(kitPrice(k))}</td>`).join('')+'</tr>';
+</script>
+</body>
+</html>

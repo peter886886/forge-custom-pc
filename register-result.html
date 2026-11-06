@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Registration Complete | FORGE</title>
+<meta name="description" content="Your FORGE membership details.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap formbox card center reveal">
+ <div class="check">✓</div><h1>Welcome to <span class="grad">FORGE</span>, <span id="hi"></span>!</h1><p class="mut">Please check the details you submitted:</p>
+ <div class="tblwrap" style="margin:24px 0;text-align:left"><table><tbody id="r"></tbody></table></div>
+ <a class="btn solid" href="login.html">Log in now</a> <a class="btn" href="register.html">Edit details</a>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const p=new URLSearchParams(location.search);$('#hi').textContent=p.get('fname')||'member';
+fillResult($('#r'),{fname:'First name',lname:'Last name',email:'Email',phone:'Phone',dob:'Date of birth',gender:'Gender',district:'District',newsletter:'Newsletter'});
+const tr=document.createElement('tr');tr.innerHTML='<td>Interests</td><td></td>';tr.lastChild.textContent=p.getAll('use').join(', ')||'—';$('#r').append(tr);</script>
+</body>
+</html>

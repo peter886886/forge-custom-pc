@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Confirmation | FORGE</title>
+<meta name="description" content="Review the products or services you are purchasing from FORGE.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Order Confirmation</p><h1>Confirm Your <span class="grad">Order</span></h1><p>Review your selected hardware, custom 3D configuration, or booked engineering service before checkout.</p></div></section>
+<section style="padding-top:10px"><div class="wrap g2" style="align-items:start">
+ <div><div id="img"></div><div class="tblwrap"><table><thead><tr><th>Item / Service</th><th>Qty</th><th>Price</th></tr></thead><tbody id="items"></tbody></table></div></div>
+ <div class="card"><h3>Order Summary</h3>
+  <table style="background:none"><tr><td>Subtotal</td><td id="sub"></td></tr><tr><td>Lab Assembly &amp; Burn-In Testing</td><td id="asm"></td></tr><tr><td id="dl">Member discount (5%)</td><td id="disc"></td></tr><tr><td><b>Total Payable</b></td><td class="price" id="tot"></td></tr></table>
+  <form id="co" action="checkout-success.html" method="get" style="margin-top:20px">
+   <input type="hidden" name="total" id="ht"><input type="hidden" name="items" id="hi">
+   <div class="field"><label for="n">Full Name</label><input id="n" name="name" placeholder="e.g. Alex Chan" data-rule="req"><div class="err"></div></div>
+   <div class="field"><label for="a">Delivery / On-Site Service Address</label><input id="a" name="address" placeholder="Unit, Building, Street, District, Hong Kong" data-rule="req"><div class="err"></div></div>
+   <div class="field"><label for="pay">Payment Method</label><select id="pay" name="pay"><option>Visa / Mastercard</option><option>FPS (Faster Payment System)</option><option>PayMe by HSBC</option><option>Octopus</option></select></div>
+   <button class="btn solid" style="width:100%;justify-content:center">Confirm &amp; Place Order →</button>
+  </form><p class="mut center" style="font-size:.8rem;margin-top:10px">Academic demonstration — no real payment is processed.</p></div>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const q = qs();
+let rows = [], img = '', asm = 0;
+
+if (q.service) {
+  const sPrice = Math.max(0, +q.price || 49);
+  const sQty = Math.max(1, +q.qty || 1);
+  rows = [[q.service + ' (FORGE Certified Service)', sQty, sPrice * sQty]];
+  asm = 0;
+  $('#img').innerHTML = `<div class="pimg" style="height:240px;overflow:hidden;border-radius:12px;margin-bottom:16px"><img src="img/renders/hero_rig_studio.png" style="width:100%;height:100%;object-fit:cover" alt="${esc(q.service)}"></div>`;
+} else if (q.id) {
+  const p = byId(q.id), n = Math.max(1, +q.qty || 1);
+  if (p) {
+    if (p.parts) {
+      rows = [[p.name + ' (Prebuilt System)', n, kitPrice(p) * n]];
+      asm = 0;
+    } else {
+      rows = [[p.name, n, p.price * n]];
+    }
+    $('#img').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="pimg" style="height:210px;margin:0;padding:14px;display:flex;align-items:center;justify-content:center">
+          <img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain" alt="${esc(p.name)}">
+        </div>
+        <div class="pimg" style="height:210px;margin:0">
+          <img src="${p.parts ? 'img/renders/hero_rig_studio.png' : 'img/installed/' + p.id + '.png'}" style="width:100%;height:100%;object-fit:cover" alt="${esc(p.name)} Installed Effect">
+        </div>
+      </div>`;
+  }
+} else {
+  const o = JSON.parse(localStorage.getItem('forgeOrder') || 'null');
+  if (o && o.items && o.items.length) {
+    rows = o.items.map(i => byId(i)).filter(Boolean).map(p => [p.name, 1, p.price]);
+    img = o.img;
+    asm = 99;
+  }
+}
+
+if (!rows.length) {
+  $('#items').innerHTML = '<tr><td colspan="3">Your order list is empty. <a href="products.html">Browse Components</a> or <a href="services.html">Book a Service</a>.</td></tr>';
+} else {
+  $('#items').innerHTML = rows.map(r => `<tr><td><b>${esc(r[0])}</b></td><td>${r[1]}</td><td class="price">${money(r[2])}</td></tr>`).join('');
+}
+
+if (img) {
+  $('#img').innerHTML = `<img src="${img}" alt="Your custom 3D PC build" style="border-radius:12px;border:1px solid var(--line);margin-bottom:16px;background:#111111;width:100%">`;
+}
+
+const sub = rows.reduce((s, r) => s + r[2], 0), u = user(), disc = u ? Math.round(sub * 0.05) : 0, tot = sub + asm - disc;
+$('#sub').textContent = money(sub);
+$('#asm').textContent = money(asm);
+$('#disc').textContent = '-' + money(disc);
+if (!u) $('#dl').innerHTML = 'Member discount (<a href="login.html">log in for 5% off</a>)';
+$('#tot').textContent = money(tot);
+$('#ht').value = tot;
+$('#hi').value = rows.map(r => r[0]).join('; ');
+if (u) $('#n').value = u.name;
+$('#co').onsubmit = e => { if (!rows.length || !validate(e.target)) e.preventDefault(); };
+</script>
+</body>
+</html>

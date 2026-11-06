@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Complaint | FORGE</title>
+<meta name="description" content="Submit a complaint to FORGE.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="contact.html">Support</a> / Complaint</p><h1>Make a <span class="grad">Complaint</span></h1><p>We are sorry something went wrong. Every complaint is reviewed by a manager within 48 hours.</p></div></section>
+<section style="padding-top:10px"><div class="wrap formbox"><form class="card" id="f" novalidate>
+ <div class="row"><div class="field"><label for="name">Name *</label><input id="name" name="name" data-rule="req"><div class="err"></div></div>
+ <div class="field"><label for="email">Email *</label><input id="email" name="email" data-rule="req|email"><div class="err"></div></div></div>
+ <div class="row"><div class="field"><label for="order">Order number</label><input id="order" name="order" placeholder="FG-XXXXXX"></div>
+ <div class="field"><label for="cat">Category *</label><select id="cat" name="cat" data-rule="req"><option value="">Select…</option><option>Faulty product</option><option>Late delivery</option><option>Staff service</option><option>Billing</option><option>Website</option></select><div class="err"></div></div></div>
+ <div class="field"><label>Severity</label><div style="display:flex;gap:16px"><label class="chk"><input type="radio" name="sev" value="Low" checked> Low</label><label class="chk"><input type="radio" name="sev" value="Medium"> Medium</label><label class="chk"><input type="radio" name="sev" value="High"> High</label></div></div>
+ <div class="field"><label for="desc">Describe the issue *</label><textarea id="desc" name="desc" rows="5" data-rule="req|min:20"></textarea><div class="err"></div></div>
+ <div class="field"><label for="file">Attach a photo (optional, max 2MB)</label><input type="file" id="file" accept="image/png,image/jpeg"><img id="prev" alt="" style="max-height:160px;margin-top:10px;border-radius:10px"></div>
+ <div class="field"><label>Preferred resolution</label><select name="res"><option>Repair</option><option>Replacement</option><option>Refund</option><option>Apology / explanation</option></select></div>
+ <button class="btn pink">Submit complaint</button>
+</form></div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>function saveTicket(type,f){const id=ticket(type);const t=JSON.parse(localStorage.getItem('forgeTickets')||'[]');t.unshift({id,type,name:f.name.value,msg:(f.msg||f.desc).value.slice(0,80),date:new Date().toLocaleDateString()});localStorage.setItem('forgeTickets',JSON.stringify(t.slice(0,20)));return id}
+function done(f,id,msg){const c=document.createElement('div');c.className='card center';c.innerHTML='<div class="check">✓</div><h2>Submitted</h2><p class="mut"></p><p>Your reference: <b></b></p><br><a class="btn" href="index.html">Back to Home</a>';c.querySelector('p').textContent=msg;c.querySelector('b').textContent=id;f.replaceWith(c)}
+const f=$('#f');liveValidate(f);
+$('#file').onchange=e=>{const x=e.target.files[0];if(!x)return;if(!/^image\/(png|jpeg)$/.test(x.type)||x.size>2e6){toast('Only PNG/JPG under 2MB');e.target.value='';return}$('#prev').src=URL.createObjectURL(x)};
+f.onsubmit=e=>{e.preventDefault();if(!validate(f))return;done(f,saveTicket('CMP',f),'Your complaint has been logged. A manager will contact you within 48 hours.')};</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gallery | FORGE</title>
+<meta name="description" content="Studio renders, installed rig views, and custom PCs built by FORGE customers.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Gallery</p><h1>Studio &amp; Community <span class="grad">Builds</span></h1><p>Precision assemblies, studio hardware photography, and verified customer rigs. Hover any card to switch between studio cutout and in-chassis view.</p></div></section>
+<section style="padding:24px 0 24px">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:20px">
+      <div class="card" style="padding:0;overflow:hidden;position:relative">
+        <img src="img/renders/hero_rig_studio.png" alt="FORGE Titan Studio Render" style="width:100%;height:350px;object-fit:cover;display:block;background:#111111">
+        <div style="padding:20px;background:#161616;border-top:1px solid var(--line)">
+          <span class="eyebrow" style="margin-bottom:6px">Flagship Showcase</span>
+          <h2 style="font-size:1.35rem;margin:0 0 4px">FORGE Titan Ultra — Dual Chamber</h2>
+          <p class="mut" style="font-size:.88rem">Ryzen 9 9950X3D · GeForce RTX 5090 32GB · 64GB DDR5-6400 · 5.0" Internal Sensor Display.</p>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;position:relative">
+        <img src="img/renders/gpu_macro.png" alt="Blackwell RTX 5090 Macro Fin Stack" style="width:100%;height:350px;object-fit:cover;display:block;background:#111111">
+        <div style="padding:20px;background:#161616;border-top:1px solid var(--line)">
+          <span class="eyebrow" style="margin-bottom:6px">Thermal Detail</span>
+          <h2 style="font-size:1.35rem;margin:0 0 4px">Blackwell Fin Stack &amp; 12V-2x6 Delivery</h2>
+          <p class="mut" style="font-size:.88rem">Triple Axial-Tech cooling array, vapor chamber baseplate, and CNC anti-sag support integration.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section style="padding-top:12px"><div class="wrap"><div class="grid" id="gal"></div></div></section>
+<div class="modal" id="lb" onclick="this.classList.remove('show')"><div class="card center" style="max-width:760px" onclick="event.stopPropagation()"><div id="lbImg" style="height:430px;position:relative;border-radius:10px;overflow:hidden;background:#0D0D0D;border:1px solid var(--line)"></div><h3 id="lbT" style="margin-top:14px"></h3><p class="mut" id="lbSub" style="font-size:.88rem;margin-bottom:14px"></p><button class="btn sm" type="button" onclick="$('#lb').classList.remove('show')">Close</button></div></div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const B=[
+  ['FORGE Titan Ultra 2026','img/products/pb3.png','img/renders/hero_rig_studio.png','RTX 5090 32GB · Ryzen 9 9950X3D · @kevin_hk'],
+  ['FORGE Apex 2026 Gaming','img/products/pb2.png','img/installed/g4.png','RTX 5080 16GB · Ryzen 7 9800X3D · @mei'],
+  ['FORGE Studio Creator 2026','img/products/pb4.png','img/installed/x3.png','Fractal North XL Walnut · Noctua G2 · @sam'],
+  ['FORGE Pulse 2026 Esports','img/products/pb1.png','img/installed/x2.png','Arctic White · RTX 5070 12GB · @tiffany'],
+  ['NVIDIA GeForce RTX 5090 32GB','img/products/g6.png','img/installed/g6.png','32GB GDDR7 Blackwell Flagship · @jason'],
+  ['AMD Ryzen 7 9800X3D','img/products/c4.png','img/installed/c4.png','104MB 2nd-Gen 3D V-Cache · @ray'],
+  ['FORGE Custom Braided Cable Kit','img/products/a1.png','img/installed/a1.png','16AWG PET + CNC Anodized Combs · @mod_pro'],
+  ['Lian Li UNI FAN TL LCD 3-Pack','img/products/a2.png','img/installed/a2.png','1.6" IPS Telemetry Fan Array · @cooler_lab'],
+  ['FORGE CNC Aluminum Anti-Sag Arm','img/products/a4.png','img/installed/a4.png','Magnetic 6061-T6 GPU Support · @forge_hk'],
+  ['Hyte Y70 Touch Infinite','img/products/x4.png','img/installed/x4.png','14.5" 2.5K Corner Touchscreen · @leo'],
+  ['Lian Li Galahad II LCD 360','img/products/k3.png','img/installed/k3.png','2.88" IPS Pump Telemetry · @ada'],
+  ['FORGE 5.0" IPS Sensor Panel','img/products/a6.png','img/installed/a6.png','800×480 Internal USB-C Display · @tech_fan']
+];
+const g=document.getElementById('gal');
+g.innerHTML=B.map(([t,src1,src2,a],i)=>`
+  <div class="card reveal" style="cursor:zoom-in" data-i="${i}">
+    <div class="pimg" style="height:200px;border-radius:8px" title="Hover to preview installed view · Click to enlarge">
+      <img class="main-photo has-alt" src="${src1}" style="width:100%;height:100%;object-fit:contain;padding:14px" alt="${t}">
+      <img class="alt-photo" src="${src2}" style="width:100%;height:100%;object-fit:cover" alt="${t} Installed View">
+    </div>
+    <h3 style="margin-top:10px;font-size:1rem">${t}</h3>
+    <p class="mut" style="font-size:.82rem;margin-top:2px">${a}</p>
+  </div>
+`).join('');
+g.querySelectorAll('.card').forEach(c=>c.onclick=()=>{
+  const b=B[c.dataset.i];
+  document.getElementById('lbImg').innerHTML=`<img src="${b[2]}" style="width:100%;height:100%;object-fit:contain" alt="${b[0]}">`;
+  document.getElementById('lbT').textContent=b[0];
+  document.getElementById('lbSub').textContent=b[3];
+  document.getElementById('lb').classList.add('show');
+});
+</script>
+</body>
+</html>

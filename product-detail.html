@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Product Detail | FORGE</title>
+<meta name="description" content="Detailed specifications, interactive 3D model inspection, and installed PC rig views for FORGE components.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="products.html">Shop</a> / <span id="crumbCat">Component</span></p><h1><span id="pn">Product</span></h1><p id="pheroSub" class="mut">360° 3D Model · Interactive Installed-in-Rig Fitment · ISO-9001 Bench Tested</p></div></section>
+<section style="padding-top:20px"><div class="wrap g2" style="align-items:start">
+ <div>
+  <!-- Interactive View Mode Tabs -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" role="tablist" aria-label="Product visualization modes">
+   <button class="chip on" id="btnMode3D" type="button">3D Model</button>
+   <button class="chip" id="btnModeRig" type="button">Installed in Rig</button>
+   <button class="chip" id="btnModePhoto" type="button">Gallery (4)</button>
+  </div>
+
+  <!-- Mode 1: Standalone 3D Component CAD Viewer -->
+  <div id="box3D" style="height:400px;position:relative;background:#111111;border:1px solid var(--line);border-radius:12px;overflow:hidden">
+   <canvas id="singlePartCanvas" style="width:100%;height:100%;display:block;cursor:grab" aria-label="3D model viewer"></canvas>
+   <div style="position:absolute;top:12px;left:12px;pointer-events:none;display:flex;gap:8px;flex-wrap:wrap">
+    <span class="telemetry-pill" style="font-size:.73rem" id="cadBadge">3D Geometry</span>
+   </div>
+   <div style="position:absolute;bottom:12px;left:12px;pointer-events:none;display:flex;gap:8px;flex-wrap:wrap">
+    <span class="telemetry-pill" style="font-size:.73rem">Drag 360° · Scroll to Zoom</span>
+   </div>
+  </div>
+
+  <!-- Mode 2: Interactive 3D Installed-in-PC Rig Effect Viewer -->
+  <div id="boxRig3D" style="display:none;height:400px;position:relative;background:#111111;border:1px solid var(--line-hi);border-radius:12px;overflow:hidden">
+   <canvas id="installedRigCanvas" style="width:100%;height:100%;display:block;cursor:grab" aria-label="Interactive 3D Installed in PC Rig"></canvas>
+   <div style="position:absolute;top:12px;left:12px;pointer-events:none;display:flex;gap:8px;flex-wrap:wrap">
+    <span class="telemetry-pill" style="font-size:.73rem;color:var(--txt)" id="rigMountBadge">Installed in Rig</span>
+    <span class="telemetry-pill" style="font-size:.73rem;color:var(--ok)">Clearance Verified</span>
+   </div>
+   <div style="position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+     <button class="chip sm on" id="rigFocusBtn" type="button">Focus Part</button>
+     <button class="chip sm" id="rigFullBtn" type="button">Full Rig</button>
+     <button class="chip sm" id="rigExplodeBtn" type="button">Explode</button>
+    </div>
+    <span class="telemetry-pill" style="font-size:.72rem">Drag to Orbit</span>
+   </div>
+  </div>
+
+  <!-- Mode 3: Multi-Angle Studio Photography & Installed Gallery -->
+  <div id="boxPhoto" style="display:none">
+   <div class="pimg" id="big" style="height:400px;border-radius:12px;overflow:hidden;background:#111111;border:1px solid var(--line)"></div>
+   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px" id="thumbs"></div>
+  </div>
+
+  <!-- Installed Fitment Quick Preview Card -->
+  <div class="card" style="margin-top:14px;padding:14px;display:grid;grid-template-columns:148px 1fr;gap:14px;align-items:center;background:#141414">
+   <div style="height:100px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer" id="quickEffectThumb" title="Click to inspect installed inside 3D rig">
+    <img id="installedEffectImg" src="img/installed/g6.png" style="width:100%;height:100%;object-fit:cover" alt="Installed in PC Preview">
+   </div>
+   <div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+     <span class="tag" style="font-size:.66rem;padding:2px 7px">In-Chassis Fitment</span>
+     <span style="font-size:.74rem;color:var(--ok);font-family:var(--mono)">Verified</span>
+    </div>
+    <h4 style="font-size:.94rem;margin-bottom:4px" id="effectTitle">Chassis Integration &amp; Thermal Clearance</h4>
+    <p class="mut" style="font-size:.81rem;margin-bottom:8px" id="effectDesc">Inspect this module mounted inside a full 3D chassis with cable routing and airflow clearance.</p>
+    <button class="btn sm" type="button" id="openRigEffectBtn" style="padding:5px 12px;font-size:.78rem">Open Live 3D Rig View →</button>
+   </div>
+  </div>
+ </div>
+
+ <div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+   <span class="tag" id="pc"></span>
+   <span class="telemetry-pill" style="font-size:.73rem;color:var(--ok)">In Stock · Ships in 24h</span>
+  </div>
+  <p class="price" style="font-size:2.1rem;margin:12px 0" id="pp"></p>
+  <p class="mut" id="ps"></p>
+
+  <div class="card" style="margin-top:18px;padding:14px;background:#141414">
+   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center">
+    <div><span class="mut" style="font-size:.72rem;font-family:var(--mono);display:block">MOUNT ZONE</span><b id="metaZone" style="font-size:.86rem;color:var(--txt);margin-top:2px;display:block">PCIe 5.0 Bay</b></div>
+    <div><span class="mut" style="font-size:.72rem;font-family:var(--mono);display:block">THERMAL RATING</span><b id="metaTemp" style="font-size:.86rem;color:var(--txt);margin-top:2px;display:block">Sub-62°C Load</b></div>
+    <div><span class="mut" style="font-size:.72rem;font-family:var(--mono);display:block">WARRANTY</span><b style="font-size:.86rem;color:var(--txt);margin-top:2px;display:block">3-Yr On-Site</b></div>
+   </div>
+  </div>
+
+  <div class="field" style="max-width:140px;margin-top:18px"><label for="qty">Quantity</label><input type="number" id="qty" value="1" min="1" max="10"></div>
+  <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
+   <a class="btn solid" id="buy">Buy Now</a>
+   <a class="btn" id="add3d">Install in 3D Builder →</a>
+  </div>
+  <h3 style="margin-top:28px;margin-bottom:10px">Specifications</h3>
+  <div class="tblwrap"><table id="spec"></table></div>
+ </div>
+</div></section>
+
+<section style="padding:40px 0;background:#0D0D0D;border-top:1px solid var(--line)">
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div>
+        <span class="eyebrow" style="margin-bottom:6px">Recommended Add-Ons</span>
+        <h3>Frequently Paired Accessories</h3>
+      </div>
+      <a class="btn sm" href="products.html?cat=acc">Browse All 10 Accessories →</a>
+    </div>
+    <div class="grid" id="pairedAcc" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px"></div>
+  </div>
+</section>
+</main>
+<script src="lib/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/pc3d.js"></script>
+<script>
+const p = byId(qs().id) || PARTS[17];
+document.title = p.name + ' | FORGE';
+$('#pn').textContent = p.name;
+$('#crumbCat').textContent = CATS[p.cat];
+$('#pc').textContent = CATS[p.cat];
+$('#pp').textContent = money(p.price);
+$('#ps').textContent = p.spec + '. Verified in the FORGE acoustic and thermal chamber with custom routed cabling and a 3-year on-site replacement warranty.';
+$('#cadBadge').textContent = `${p.id.toUpperCase()} · ${p.name.slice(0, 28)}`;
+$('#installedEffectImg').src = `img/installed/${p.id}.png`;
+$('#installedEffectImg').alt = `${p.name} Installed in Rig`;
+
+const zoneLabels = {
+  cpu:'AM5 / LGA1851 Socket Bay', mb:'Full-Size ATX Tray Mount', ram:'Quad-DIMM A2/B2 Slots',
+  gpu:'PCIe 5.0 x16 Primary Slot', ssd:'M.2_1 Gen5 Heatsink Bay', psu:'Dual-Chamber Lower Shroud',
+  cool:'360mm Top / CPU Tower Bay', case:'Dual-Chamber Panoramic Frame', acc:'Custom Modding & Telemetry Bay'
+};
+const tempLabels = {
+  cpu:'52°C–58°C Gaming', mb:'42°C VRM Heatsink', ram:'37°C EXPO/XMP Load',
+  gpu:'60°C–63°C Full Load', ssd:'41°C DirectStorage', psu:'<1% Ripple · Zero-RPM',
+  cool:'Sub-60°C Sustained', case:'28.5 dBA Positive Flow', acc:'Zero-Interference Fit'
+};
+$('#metaZone').textContent = zoneLabels[p.cat] || 'Standard ATX Bay';
+$('#metaTemp').textContent = tempLabels[p.cat] || 'Bench Verified';
+$('#rigMountBadge').textContent = `Installed · ${zoneLabels[p.cat] || 'ATX Bay'}`;
+$('#effectTitle').textContent = `${p.name} — In-Rig Fitment`;
+
+// 1. Standalone 3D Single Part Viewer
+let viewer = null;
+try {
+  viewer = createPartViewer(document.getElementById('singlePartCanvas'), p);
+} catch (e) {
+  console.warn('3D viewer error:', e);
+}
+
+// 2. Lazy-Initialized Interactive 3D Full PC Rig with THIS Product Installed
+let rigViewer = null;
+function ensureRigViewer() {
+  if (rigViewer) return;
+  try {
+    const sampleBuild = {
+      case: byId(p.cat === 'case' ? p.id : 'x1'),
+      mb:   byId(p.cat === 'mb'   ? p.id : (p.socket === 'LGA1851' ? 'm1' : 'm3')),
+      cpu:  byId(p.cat === 'cpu'  ? p.id : (p.socket === 'LGA1851' ? 'c6' : 'c4')),
+      cool: byId(p.cat === 'cool' ? p.id : 'k2'),
+      ram:  byId(p.cat === 'ram'  ? p.id : 'r2'),
+      gpu:  byId(p.cat === 'gpu'  ? p.id : 'g6'),
+      ssd:  byId(p.cat === 'ssd'  ? p.id : 's3'),
+      psu:  byId(p.cat === 'psu'  ? p.id : 'p2'),
+      acc:  p.cat === 'acc' ? [p, byId('a1'), byId('a2')].filter((v,i,a)=>v&&a.indexOf(v)===i) : [byId('a1'), byId('a2'), byId('a4'), byId('a6')]
+    };
+    rigViewer = createPC(document.getElementById('installedRigCanvas'), { autoSpin: false });
+    rigViewer.updateBuild(sampleBuild);
+    rigViewer.focusComponent(p.cat, p.id);
+  } catch (e) {
+    console.warn('Rig viewer error:', e);
+  }
+}
+
+// 3. 4-View Studio & Installed Gallery
+const galleryViews = [
+  {
+    label: '1. Studio Photo',
+    html: `<img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain;padding:22px;background:#111111" alt="${p.name} Studio Photo">`
+  },
+  {
+    label: '2. In-Rig View',
+    html: `<img src="img/installed/${p.id}.png" style="width:100%;height:100%;object-fit:cover" alt="${p.name} Installed in Rig">`
+  },
+  {
+    label: '3. Lab Detail',
+    html: `<img src="img/renders/cat_${p.cat}.png" style="width:100%;height:100%;object-fit:cover" alt="${p.name} Lab Detail">`
+  },
+  {
+    label: '4. Wireframe',
+    html: `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111111">${partSVG(p)}</div>`
+  }
+];
+
+function selectGalleryView(idx) {
+  $('#big').innerHTML = galleryViews[idx].html;
+  $$('#thumbs .thumb-item').forEach((el, i) => {
+    el.style.borderColor = (i === idx) ? '#F5F5F5' : 'var(--line)';
+  });
+}
+
+$('#thumbs').innerHTML = galleryViews.map((g, i) => `
+  <div class="thumb-item" data-i="${i}" style="cursor:pointer;border:1px solid ${i===0?'#F5F5F5':'var(--line)'};border-radius:8px;overflow:hidden;background:#141414;transition:.2s">
+    <div style="height:58px;overflow:hidden">${g.html}</div>
+    <div style="font-size:.68rem;text-align:center;padding:4px;color:var(--mut);font-family:var(--mono);background:#0E0E0E">${g.label}</div>
+  </div>
+`).join('');
+$$('#thumbs .thumb-item').forEach(t => t.onclick = () => selectGalleryView(+t.dataset.i));
+selectGalleryView(0);
+
+// 4. Mode Switching
+function setMode(mode) {
+  $('#btnMode3D').classList.toggle('on', mode === '3d');
+  $('#btnModeRig').classList.toggle('on', mode === 'rig');
+  $('#btnModePhoto').classList.toggle('on', mode === 'photo');
+  $('#box3D').style.display = (mode === '3d') ? 'block' : 'none';
+  $('#boxRig3D').style.display = (mode === 'rig') ? 'block' : 'none';
+  $('#boxPhoto').style.display = (mode === 'photo') ? 'block' : 'none';
+  if (mode === 'rig') ensureRigViewer();
+}
+
+$('#btnMode3D').onclick = () => setMode('3d');
+$('#btnModeRig').onclick = () => setMode('rig');
+$('#btnModePhoto').onclick = () => setMode('photo');
+$('#openRigEffectBtn').onclick = () => setMode('rig');
+$('#quickEffectThumb').onclick = () => setMode('rig');
+
+$('#rigFocusBtn').onclick = () => {
+  if (!rigViewer) return;
+  rigViewer.focusComponent(p.cat, p.id);
+  $('#rigFocusBtn').classList.add('on');
+  $('#rigFullBtn').classList.remove('on');
+};
+$('#rigFullBtn').onclick = () => {
+  if (!rigViewer) return;
+  rigViewer.resetView();
+  $('#rigFullBtn').classList.add('on');
+  $('#rigFocusBtn').classList.remove('on');
+};
+$('#rigExplodeBtn').onclick = function() {
+  if (!rigViewer) return;
+  const ex = rigViewer.toggleExplode();
+  this.classList.toggle('on', ex);
+};
+
+$('#buy').onclick = () => location.href = `order-confirm.html?id=${p.id}&qty=${Math.max(1, +$('#qty').value || 1)}`;
+$('#add3d').href = 'builder.html?add=' + p.id;
+$('#spec').innerHTML = [
+  ['Category', CATS[p.cat]],
+  ['Model', p.name],
+  ['Core Spec', p.spec],
+  ['Mounting Bay', zoneLabels[p.cat] || 'Standard ATX'],
+  ['Thermal & Power', p.watt ? `${p.watt}W TDP · ${tempLabels[p.cat]}` : (p.cap ? `${p.cap}W ATX 3.1 Output` : tempLabels[p.cat])],
+  ['Interface', p.socket || 'PCIe 5.0 / Universal Modular'],
+  ['Verification', 'Clearance CAD Checked + 24h Burn-In'],
+  ['Warranty', '3-Year On-Site Hardware Replacement']
+].map(r => `<tr><th>${r[0]}</th><td>${r[1]}</td></tr>`).join('');
+
+// 5. Frequently Paired Accessories
+const pairedIds = (p.cat === 'gpu') ? ['a4', 'a1', 'a5', 'a6']
+                : (p.cat === 'cpu') ? ['a3', 'a8', 'a1', 'a9']
+                : (p.cat === 'case') ? ['a1', 'a2', 'a6', 'a10']
+                : (p.cat === 'cool') ? ['a3', 'a9', 'a2', 'a8']
+                : ['a1', 'a4', 'a2', 'a6'];
+
+const pairedParts = pairedIds.filter(id => id !== p.id).slice(0, 4).map(id => byId(id)).filter(Boolean);
+$('#pairedAcc').innerHTML = pairedParts.map(acc => `
+  <div class="card" style="padding:14px;display:flex;flex-direction:column">
+    <a href="product-detail.html?id=${acc.id}" class="pimg" style="height:140px;margin-bottom:10px;border-radius:8px">
+      <img class="main-photo has-alt" src="img/products/${acc.id}.png" style="width:100%;height:100%;object-fit:contain;padding:12px" alt="${acc.name}">
+      <img class="alt-photo" src="img/installed/${acc.id}.png" style="width:100%;height:100%;object-fit:cover" alt="${acc.name} Installed">
+    </a>
+    <span class="tag" style="font-size:.66rem;align-self:flex-start">${CATS[acc.cat]}</span>
+    <h4 style="margin:8px 0 4px;font-size:.94rem"><a href="product-detail.html?id=${acc.id}" style="color:var(--txt)">${acc.name}</a></h4>
+    <p class="mut" style="font-size:.78rem;margin-bottom:12px">${acc.spec}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:6px">
+      <b class="price" style="font-size:1rem">${money(acc.price)}</b>
+      <div style="display:flex;gap:6px">
+        <a class="btn sm" href="product-detail.html?id=${acc.id}">Details</a>
+        <a class="btn sm solid" href="order-confirm.html?id=${acc.id}&qty=1">Buy</a>
+      </div>
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>

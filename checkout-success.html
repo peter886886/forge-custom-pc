@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Placed | FORGE</title>
+<meta name="description" content="Thank you for your order.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap formbox card center reveal">
+ <div class="check">✓</div><h1>Thank you!</h1><p class="mut">Your order has been received and our technicians are on it.</p>
+ <div class="tblwrap" style="margin:24px 0"><table><tbody id="r"></tbody></table></div>
+ <a class="btn solid" href="index.html">Back to Home</a> <a class="btn" href="member-dashboard.html">My Orders</a>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const q=qs(),id=ticket('FG');
+fillResult($('#r'),{name:'Name',address:'Delivery address',pay:'Payment',items:'Items',total:'Total (HK$)'});
+$('#r').insertAdjacentHTML('afterbegin',`<tr><td>Order no.</td><td><b>${id}</b></td></tr>`);
+const h=JSON.parse(localStorage.getItem('forgeOrders')||'[]');h.unshift({id,total:+q.total||0,date:new Date().toLocaleDateString(),items:q.items||''});localStorage.setItem('forgeOrders',JSON.stringify(h.slice(0,10)));localStorage.removeItem('forgeOrder');</script>
+</body>
+</html>

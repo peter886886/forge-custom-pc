@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Build Guides &amp; Hardware News | FORGE</title>
+<meta name="description" content="2026 PC building guides, Blackwell RTX 50-series benchmarks, AM5 vs LGA1851 analysis, and thermal engineering tips from FORGE.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Build Guides &amp; News</p><h1>Engineering Guides &amp; <span class="grad">Lab Reports</span></h1><p>Deep-dive 2026 benchmarks, thermal architecture comparisons, and PC building guides from FORGE Lab engineers. Click any article to read the full technical report.</p></div></section>
+<section><div class="wrap grid" id="guideGrid"></div></section>
+
+<!-- Interactive Article Reader Modal -->
+<div class="modal" id="articleModal" onclick="this.classList.remove('show')">
+  <div class="card" style="max-width:740px;width:94%;max-height:88dvh;overflow-y:auto;padding:28px" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px">
+      <div>
+        <span class="tag" id="artTag">Guide</span>
+        <h2 id="artTitle" style="margin:8px 0 4px">Article Title</h2>
+        <p class="mut" id="artMeta" style="font-size:.82rem;font-family:var(--mono)"></p>
+      </div>
+      <button class="btn sm" type="button" onclick="$('#articleModal').classList.remove('show')">✕ Close</button>
+    </div>
+    <div id="artHero" style="height:260px;border-radius:12px;overflow:hidden;border:1px solid var(--line-hi);margin-bottom:18px"></div>
+    <div id="artBody" style="color:var(--txt);line-height:1.75;font-size:.96rem"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap;gap:10px">
+      <span class="mut" style="font-size:.84rem">Verified by FORGE Thermal &amp; Acoustic Lab · Hong Kong</span>
+      <a class="btn sm solid" id="artCta" href="builder.html">Configure in 3D Builder →</a>
+    </div>
+  </div>
+</div>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const GUIDES = [
+  {
+    tag: 'GPU Architecture',
+    title: 'How to Choose a GPU in 2026: RTX 50-Series vs RX 9070 XT',
+    date: '28 Oct 2026 · 6 min read',
+    img1: 'img/renders/cat_gpu.png',
+    img2: 'img/installed/g6.png',
+    summary: 'GDDR7 bandwidth, DLSS 4 Multi-Frame Generation, and 12V-2x6 power budgets explained for 1440p and 4K builds.',
+    ctaHref: 'products.html?cat=gpu',
+    ctaText: 'Shop 2026 GPUs →',
+    body: `<p>With NVIDIA's Blackwell <b>GeForce RTX 50-Series (RTX 5070 to RTX 5090 32GB)</b> and AMD's RDNA 4 <b>Radeon RX 9070 XT 16GB</b>, choosing the right graphics accelerator in 2026 comes down to target resolution, VRAM longevity, and chassis thermal capacity.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">1. 1440p High-Refresh Gaming (165Hz–240Hz)</h4>
+    <p class="mut">The <b>RTX 5070 12GB ($599)</b> and <b>Radeon RX 9070 XT 16GB ($649)</b> deliver over 160 FPS in modern ray-traced titles while keeping total board power under 290W. Pair with a 750W–850W ATX 3.1 PSU.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">2. 4K Ultra &amp; Local AI Workstations</h4>
+    <p class="mut">For native 4K path-tracing and local LLM/diffusion workflows, the <b>RTX 5080 16GB ($1,099)</b> and flagship <b>RTX 5090 32GB GDDR7 ($1,999)</b> provide massive tensor throughput. Because flagship 3.5-slot coolers weigh up to 2.2 kg, we strongly recommend pairing them with the <b>FORGE CNC Aluminum Anti-Sag Arm ($25)</b> and a native 1000W+ ATX 3.1 power supply.</p>`
+  },
+  {
+    tag: 'CPU Benchmark',
+    title: 'AMD Ryzen 9000X3D vs Intel Core Ultra 200S: 20-Game Lab Test',
+    date: '20 Oct 2026 · 8 min read',
+    img1: 'img/renders/cat_cpu.png',
+    img2: 'img/installed/c4.png',
+    summary: 'We benchmarked AM5 2nd-Gen 3D V-Cache against LGA1851 Arrow Lake across 20 games and creator suites.',
+    ctaHref: 'products.html?cat=cpu',
+    ctaText: 'Compare CPUs →',
+    body: `<p>Our Kwun Tong lab tested the <b>AMD Ryzen 7 9800X3D</b>, <b>Ryzen 9 9950X3D</b>, and <b>Intel Core Ultra 9 285K</b> on identical RTX 5090 testbeds with DDR5-6400 CL30 memory.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">Key Findings from Our 20-Game Suite</h4>
+    <p class="mut">• <b>1% Low Frametime Stability:</b> The Ryzen 7 9800X3D's 104MB 2nd-Gen 3D V-Cache (with the cache slice relocated underneath the CCD for superior thermal transfer) leads pure gaming 1% lows by 14%.</p>
+    <p class="mut">• <b>Hybrid Creator &amp; AI Workloads:</b> The 16-core <b>Ryzen 9 9950X3D</b> and 24-core <b>Intel Core Ultra 9 285K</b> tie within 2% in Blender Cycles 5.4 and DaVinci Resolve 8K timeline exports. Adding a <b>Thermal Grizzly Contact Frame ($29)</b> reduced LGA1851 peak package temperatures by 5.1°C.</p>`
+  },
+  {
+    tag: 'Power & Safety',
+    title: 'ATX 3.1 &amp; 12V-2x6 Explained: Why Your Power Supply Matters',
+    date: '12 Oct 2026 · 4 min read',
+    img1: 'img/renders/cat_psu.png',
+    img2: 'img/installed/p5.png',
+    summary: 'How recessed sense pins and 200% transient power excursion handling protect high-end GPUs.',
+    ctaHref: 'products.html?cat=psu',
+    ctaText: 'Explore ATX 3.1 PSUs →',
+    body: `<p>High-transient GPUs like the RTX 5090 (575W TDP) can draw microsecond power spikes up to 2x their rated TDP. Legacy ATX 2.4 power supplies often trip OCP or suffer voltage droop under these loads.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">Why FORGE Standardizes on ATX 3.1 &amp; Native 12V-2x6</h4>
+    <p class="mut">Every PSU in the FORGE catalog—from the <b>Corsair RM750e ATX 3.1</b> to the <b>ASUS ROG Thor 1600W Titanium III</b>—uses the updated <b>12V-2x6</b> header with shorter sense pins and longer conductor terminals, ensuring power only flows when the connector is 100% seated.</p>`
+  },
+  {
+    tag: 'Thermal Lab',
+    title: '360mm LCD Liquid AIO vs Dual-Tower Air Cooling in 2026',
+    date: '05 Oct 2026 · 5 min read',
+    img1: 'img/renders/cat_cool.png',
+    img2: 'img/installed/k2.png',
+    summary: 'Acoustic dBA-normalized thermal curves comparing Noctua NH-D15 G2 against NZXT Kraken Elite 360.',
+    ctaHref: 'products.html?cat=cool',
+    ctaText: 'View Coolers →',
+    body: `<p>At a normalized noise floor of <b>28.5 dBA</b> in our anechoic chamber, both modern dual-tower air coolers and 360mm AIO liquid coolers deliver remarkable thermal dissipation.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">When to Choose Air vs 360mm Liquid AIO</h4>
+    <p class="mut">• <b>Noctua NH-D15 G2 Chromax ($149):</b> Zero pump noise, infinite mechanical longevity, and effortless cooling up to 220W TDP. In our 3D Builder, dual-tower air coolers are positioned with full DDR5 RAM clearance.</p>
+    <p class="mut">• <b>NZXT Kraken Elite 360 / Lian Li Galahad II LCD ($249–$279):</b> Ideal for 250W+ multi-core loads and panoramic glass cases, featuring live 60Hz IPS pump displays for real-time coolant and package telemetry.</p>`
+  },
+  {
+    tag: 'Memory Tuning',
+    title: 'DDR5-6000 CL30 vs DDR5-6600: How Much RAM Do You Need?',
+    date: '29 Sep 2026 · 3 min read',
+    img1: 'img/renders/cat_ram.png',
+    img2: 'img/installed/r3.png',
+    summary: '32GB vs 64GB vs 96GB capacity tiers and sweet-spot 1:1 memory controller ratios explained.',
+    ctaHref: 'products.html?cat=ram',
+    ctaText: 'Browse DDR5 Kits →',
+    body: `<p>Memory capacity and CAS latency directly impact both gaming 1% lows and creative viewport responsiveness.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">2026 Capacity &amp; Frequency Recommendations</h4>
+    <p class="mut">• <b>32GB (2×16GB) DDR5-6000/6400 CL30:</b> The golden sweet spot for gaming builds on AM5 and LGA1851.</p>
+    <p class="mut">• <b>64GB–96GB (G.Skill Trident Z5 Royal / Corsair Dominator Titanium):</b> Essential for Unreal Engine 5 compilation, 8K video grading, and local AI model weights.</p>`
+  },
+  {
+    tag: 'Custom Modding',
+    title: 'Inside the FORGE Telemetry &amp; Zero-Slack Modding Ecosystem',
+    date: '15 Sep 2026 · 4 min read',
+    img1: 'img/renders/cat_acc.png',
+    img2: 'img/installed/a6.png',
+    summary: 'How our 5.0" IPS internal sensor panel, UNI FAN LCDs, and CNC cable combs elevate custom builds.',
+    ctaHref: 'products.html?cat=acc',
+    ctaText: 'Shop 10 Accessories →',
+    body: `<p>A truly bespoke PC is defined by its structural discipline and real-time observability. That is why FORGE introduced 10 dedicated modding &amp; telemetry accessories in 2026.</p>
+    <h4 style="color:var(--pri);margin:14px 0 6px">Signature FORGE Modding Highlights</h4>
+    <p class="mut">• <b>FORGE 5.0" IPS Internal Sensor Panel ($59):</b> Connects via internal USB-C header to display live CPU/GPU temperatures, clock speeds, and frametime graphs inside your glass chamber.</p>
+    <p class="mut">• <b>FORGE Braided Cable Kit ($49) &amp; CNC Anti-Sag Arm ($25):</b> Eliminates cable clutter and keeps heavy triple-slot GPUs laser-level for years of transport and operation.</p>`
+  }
+];
+
+$('#guideGrid').innerHTML = GUIDES.map((g, idx) => `
+  <article class="card reveal" style="display:flex;flex-direction:column;cursor:pointer" onclick="openGuide(${idx})">
+    <div class="pimg" style="height:195px;border-radius:10px;margin-bottom:12px" title="Hover to see Installed Rig Effect">
+      <img class="main-photo" src="${g.img1}" style="width:100%;height:100%;object-fit:cover" alt="${esc(g.title)}">
+      <img class="alt-photo" src="${g.img2}" style="width:100%;height:100%;object-fit:cover" alt="${esc(g.title)} Installed Effect">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span class="tag">${esc(g.tag)}</span>
+      <span class="mut" style="font-size:.76rem;font-family:var(--mono)">${esc(g.date)}</span>
+    </div>
+    <h3 style="margin:10px 0 6px">${esc(g.title)}</h3>
+    <p class="mut" style="font-size:.88rem;margin-bottom:14px">${esc(g.summary)}</p>
+    <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+      <span style="color:var(--pri);font-weight:700;font-size:.86rem">Read Technical Report →</span>
+      <a class="btn sm" href="${g.ctaHref}" onclick="event.stopPropagation()">${g.ctaText}</a>
+    </div>
+  </article>
+`).join('');
+
+function openGuide(idx) {
+  const g = GUIDES[idx];
+  if (!g) return;
+  $('#artTag').textContent = g.tag;
+  $('#artTitle').textContent = g.title;
+  $('#artMeta').textContent = g.date;
+  $('#artHero').innerHTML = `<img src="${g.img1}" style="width:100%;height:100%;object-fit:cover" alt="${esc(g.title)}">`;
+  $('#artBody').innerHTML = g.body;
+  $('#artCta').href = g.ctaHref;
+  $('#artCta').textContent = g.ctaText;
+  $('#articleModal').classList.add('show');
+}
+</script>
+</body>
+</html>

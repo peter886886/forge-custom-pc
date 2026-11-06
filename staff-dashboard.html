@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Staff Dashboard | FORGE</title>
+<meta name="description" content="FORGE internal staff dashboard.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section><div class="wrap">
+ <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><p class="eyebrow">Staff portal</p><h2>Operations <span class="grad">Dashboard</span></h2></div><button class="btn pink sm" id="out">Log out</button></div>
+ <div class="grid" style="margin:20px 0">
+  <div class="card kpi"><span class="mut">Revenue (Nov)</span><b data-count="248600" data-suf="">0</b></div>
+  <div class="card kpi"><span class="mut">Orders in progress</span><b data-count="37">0</b></div>
+  <div class="card kpi"><span class="mut">Open tickets</span><b id="tk">0</b></div>
+  <div class="card kpi"><span class="mut">Satisfaction</span><b data-count="98" data-suf="%">0</b></div>
+ </div>
+ <div class="g2" style="align-items:start">
+  <div class="card"><h3>Weekly sales</h3><div id="chart" style="display:flex;align-items:flex-end;gap:12px;height:200px;margin-top:20px"></div></div>
+  <div class="card"><h3>Latest customer tickets</h3><div class="tblwrap"><table><thead><tr><th>Ref</th><th>Name</th><th>Message</th></tr></thead><tbody id="tl"></tbody></table></div></div>
+ </div>
+ <h3 style="margin-top:30px">Inventory</h3><div class="tblwrap"><table><thead><tr><th>Part</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead><tbody id="inv"></tbody></table></div>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const U=user();if(!U||U.role!=='staff'){location.href='login.html'};
+$('#out').onclick=()=>{localStorage.removeItem('forgeUser');location.href='login.html'};
+const W=[['Mon',42],['Tue',58],['Wed',51],['Thu',73],['Fri',88],['Sat',100],['Sun',66]];
+$('#chart').innerHTML=W.map(([d,v])=>`<div style="flex:1;text-align:center"><div title="${v} orders" style="height:${v*1.6}px;background:linear-gradient(var(--pri),var(--acc));border-radius:6px 6px 0 0;transition:.3s" onmouseover="this.style.opacity=.7" onmouseout="this.style.opacity=1"></div><small class="mut">${d}</small></div>`).join('');
+const T=JSON.parse(localStorage.getItem('forgeTickets')||'[]');$('#tk').textContent=T.length+5;
+$('#tl').innerHTML=T.slice(0,6).map(t=>`<tr><td>${esc(t.id)}</td><td>${esc(t.name)}</td><td>${esc(t.msg)}</td></tr>`).join('')||'<tr><td colspan="3" class="mut">No new tickets.</td></tr>';
+$('#inv').innerHTML=PARTS.map((p,i)=>{const s=(i*37+11)%60;return `<tr><td>${p.name}</td><td>${CATS[p.cat]}</td><td>${money(p.price)}</td><td>${s}</td><td><span class="status ${s<10?'s-b':s<25?'s-w':'s-ok'}">${s<10?'Reorder':s<25?'Low':'OK'}</span></td></tr>`}).join('');</script>
+</body>
+</html>

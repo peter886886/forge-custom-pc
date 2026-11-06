@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORGE | Custom Workstations & Gaming PCs</title>
+<meta name="description" content="Custom workstations and gaming PCs built in Hong Kong. Configure in real-time 3D with live compatibility and thermal checks.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+  <section class="hero"><div class="wrap g2">
+    <div>
+      <p class="eyebrow">Hong Kong · Built to Order</p>
+      <h1 class="grad">Custom PCs, engineered in real&#8209;time 3D.</h1>
+      <p>Select every component with automatic clearance and wattage checks, inspect internal cable routing in interactive 3D, and receive a 24&#8209;hour stress&#8209;tested system in five working days.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+        <a class="btn solid" href="builder.html">Open 3D Configurator</a>
+        <a class="btn" href="products.html">Browse 53 Components</a>
+      </div>
+      <!-- Clean Swatch & Explode Bar (Zero Emojis) -->
+      <div style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <button class="chip sm act" onclick="setHeroMode('#E5A93C',this)"><span class="swatch-dot" style="background:#E5A93C"></span>Warm Gold</button>
+        <button class="chip sm" onclick="setHeroMode('#10B981',this)"><span class="swatch-dot" style="background:#10B981"></span>Emerald</button>
+        <button class="chip sm" onclick="setHeroMode('#FF7A17',this)"><span class="swatch-dot" style="background:#FF7A17"></span>Signal Orange</button>
+        <button class="chip sm" id="heroExpBtn" onclick="const on=hero.toggleExplode();this.classList.toggle('act',on)">Explode View</button>
+      </div>
+      <div class="stats">
+        <div><b data-count="12400" data-suf="+">12,400+</b><span class="mut" style="font-size:.84rem">Systems delivered</span></div>
+        <div><b data-count="4" data-suf=".9★">4.9★</b><span class="mut" style="font-size:.84rem">Verified client rating</span></div>
+        <div><b data-count="3" data-suf=" yr">3 yr</b><span class="mut" style="font-size:.84rem">On&#8209;site HK warranty</span></div>
+      </div>
+    </div>
+    <div class="hero-stage">
+      <canvas id="heroCanvas" aria-label="Interactive 3D model of a FORGE PC"></canvas>
+      <div class="hero-badge"><span><i></i>Interactive 3D · Drag to rotate · Scroll to zoom</span><span>RTX 5070 Ti · 9800X3D</span></div>
+    </div>
+  </div></section>
+
+  <!-- Authorized Hardware Partner Strip -->
+  <div class="marquee" aria-label="Authorized hardware partners">
+    <div class="marquee-track">
+      <div class="marquee-item">NVIDIA GEFORCE <span>PARTNER</span></div>
+      <div class="marquee-item">AMD RYZEN <span>9000 SERIES</span></div>
+      <div class="marquee-item">INTEL CORE <span>ULTRA</span></div>
+      <div class="marquee-item">ASUS ROG <span>CERTIFIED</span></div>
+      <div class="marquee-item">CORSAIR <span>PLATINUM</span></div>
+      <div class="marquee-item">LIAN LI <span>CHASSIS</span></div>
+      <div class="marquee-item">NOCTUA <span>ACOUSTICS</span></div>
+      <div class="marquee-item">SAMSUNG <span>GEN5 NVME</span></div>
+      <div class="marquee-item">NVIDIA GEFORCE <span>PARTNER</span></div>
+      <div class="marquee-item">AMD RYZEN <span>9000 SERIES</span></div>
+      <div class="marquee-item">INTEL CORE <span>ULTRA</span></div>
+      <div class="marquee-item">ASUS ROG <span>CERTIFIED</span></div>
+      <div class="marquee-item">CORSAIR <span>PLATINUM</span></div>
+      <div class="marquee-item">LIAN LI <span>CHASSIS</span></div>
+      <div class="marquee-item">NOCTUA <span>ACOUSTICS</span></div>
+      <div class="marquee-item">SAMSUNG <span>GEN5 NVME</span></div>
+    </div>
+  </div>
+
+  <!-- Tagline Scroll Reveal Section (ai-design-skills B11) -->
+  <section style="padding:88px 0 40px"><div class="wrap center">
+    <p class="eyebrow">Assembly Standard</p>
+    <p class="tagline-reveal">
+      Every machine is assembled by a single technician, wired with custom combed harnesses, and validated under full thermal load for 24 hours before it ships.
+    </p>
+  </div></section>
+
+  <!-- Scroll-Driven 3D Hardware Deconstruction Showcase -->
+  <section id="anatomySec"><div class="wrap">
+    <div class="center reveal" style="max-width:60ch;margin:0 auto 40px">
+      <p class="eyebrow">Internal Architecture</p>
+      <h2>Inspect every layer before we build</h2>
+      <p class="mut">Scroll or scrub below to separate the chassis, graphics subsystem, liquid cooling loop, and power delivery.</p>
+    </div>
+    <div class="g2" style="align-items:start;gap:32px">
+      <div class="hero-stage" style="position:sticky;top:88px;height:490px">
+        <canvas id="anatomyCanvas" style="width:100%;height:100%;display:block;cursor:grab"></canvas>
+        <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;pointer-events:none">
+          <span class="telemetry-pill">Exploded view <b id="expPct">0%</b></span>
+          <span class="telemetry-pill">Zero clearance conflict</span>
+        </div>
+        <div style="position:absolute;bottom:12px;left:12px;right:12px;display:flex;align-items:center;gap:12px;background:rgba(14,14,14,.9);backdrop-filter:blur(12px);padding:8px 14px;border-radius:8px;border:1px solid var(--line)">
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--mut);white-space:nowrap">Explode</span>
+          <input type="range" id="expRange" min="0" max="100" value="0" style="flex:1;padding:0;accent-color:#F5F5F5;cursor:pointer;height:4px" aria-label="Explode 3D layers">
+          <a class="btn sm solid" href="builder.html" style="white-space:nowrap">Customize</a>
+        </div>
+      </div>
+
+      <div style="display:grid;gap:16px" id="anatomySteps">
+        <div class="card reveal anatomy-step" data-exp="0" data-ry="1.15" data-rx="0.14" style="cursor:pointer;border-color:var(--line-hi)">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag">01 · Chassis</span><span style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">Dual&#8209;chamber</span></div>
+          <h3 style="margin-top:10px">Pillarless tempered glass &amp; isolated PSU bay</h3>
+          <p class="mut" style="font-size:.9rem">Separates power supply heat from the main motherboard chamber while keeping grommeted cable pass&#8209;throughs flush.</p>
+        </div>
+        <div class="card reveal anatomy-step" data-exp="0.38" data-ry="0.72" data-rx="0.10" style="cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag">02 · Graphics</span><span style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">PCIe 5.0 ×16</span></div>
+          <h3 style="margin-top:10px">RTX 50&#8209;series GPU with machined anti&#8209;sag support</h3>
+          <p class="mut" style="font-size:.9rem">Heavy triple&#8209;slot cards sit level on a telescopic 6061&#8209;T6 aluminum bracket with combed 16&#8209;pin 12V&#8209;2x6 power routing.</p>
+        </div>
+        <div class="card reveal anatomy-step" data-exp="0.72" data-ry="0.82" data-rx="0.22" style="cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag">03 · Cooling</span><span style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">360mm AIO</span></div>
+          <h3 style="margin-top:10px">Liquid cooling loop &amp; CNC contact frame</h3>
+          <p class="mut" style="font-size:.9rem">Even IHS mounting pressure and high&#8209;static&#8209;pressure radiator fans keep sustained boost clocks quiet under load.</p>
+        </div>
+        <div class="card reveal anatomy-step" data-exp="1.0" data-ry="0.52" data-rx="0.16" style="cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span class="tag">04 · Catalog</span><span style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">53 Parts</span></div>
+          <h3 style="margin-top:10px">Individual 3D CAD models for every part</h3>
+          <p class="mut" style="font-size:.9rem">Preview all 53 processors, motherboards, GPUs, cases, and modding accessories standalone or installed inside the rig.</p>
+        </div>
+      </div>
+    </div>
+  </div></section>
+
+  <!-- Core Engineering Standards -->
+  <section><div class="wrap">
+    <div class="center reveal"><p class="eyebrow">Why FORGE</p><h2>Built to workstation standards</h2><p class="mut">Retail boxed components, documented burn&#8209;in logs, and clean serviceability.</p></div>
+    <div class="grid" style="margin-top:36px">
+      <div class="card reveal"><div class="icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg></div><h3>Real&#8209;time 3D &amp; airflow</h3><p class="mut" style="font-size:.9rem">Orbit, zoom, explode parts, and preview intake&#8209;to&#8209;exhaust airflow before placing your order.</p></div>
+      <div class="card reveal"><div class="icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></div><h3>Automatic compatibility</h3><p class="mut" style="font-size:.9rem">CPU sockets, ATX 3.1 PSU headroom, and cooler clearance are verified automatically as you pick parts.</p></div>
+      <div class="card reveal"><div class="icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><h3>24&#8209;hour OCCT burn&#8209;in</h3><p class="mut" style="font-size:.9rem">Every machine ships with updated BIOS, tuned EXPO/XMP memory profiles, and thermal stress logs.</p></div>
+      <div class="card reveal"><div class="icon"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><h3>5&#8209;day HK courier</h3><p class="mut" style="font-size:.9rem">Delivered with internal expanding&#8209;foam GPU bracing, original component boxes, and 3&#8209;year support.</p></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <div class="slider reveal">
+      <div class="slides">
+        <div class="slide"><div><span class="tag">2026 Lineup</span><h2 style="margin-top:10px">GeForce RTX 50 Series &amp; Ryzen 9000X3D</h2><p class="mut">GDDR7 bandwidth and PCIe 5.0 storage. Compare 1080p, 1440p, and 4K frame rates live in the configurator.</p><br><a class="btn sm solid" href="products.html">View Components</a></div><div style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0E0E0E"><img src="img/installed/g6.png" alt="RTX 5090 Installed" style="width:100%;height:100%;object-fit:cover"></div></div>
+        <div class="slide"><div><span class="tag">Most Popular</span><h2 style="margin-top:10px">FORGE Apex 2026 (9800X3D + 5070 Ti)</h2><p class="mut">Balanced 1440p and 4K gaming system with 360mm LCD liquid cooling, anti&#8209;sag bracket, and braided cables.</p><br><a class="btn sm solid" href="builder.html?kit=pb2">Open in 3D Builder</a></div><div style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0E0E0E;padding:12px"><img src="img/products/pb2.png" alt="FORGE Apex 2026" style="width:100%;height:100%;object-fit:contain"></div></div>
+        <div class="slide"><div><span class="tag">Accessories</span><h2 style="margin-top:10px">Internal displays, fans &amp; cable kits</h2><p class="mut">16AWG combed cable kits, 1.6&#8209;inch LCD daisy&#8209;chain fans, 5&#8209;inch sensor panels, and CNC contact frames.</p><br><a class="btn sm solid" href="products.html?cat=acc">Browse Accessories</a></div><div style="height:220px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#0E0E0E"><img src="img/installed/a6.png" alt="Sensor Panel Installed" style="width:100%;height:100%;object-fit:cover"></div></div>
+      </div>
+      <button class="sbtn sprev" aria-label="Previous">‹</button><button class="sbtn snext" aria-label="Next">›</button><div class="dots"></div>
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <div class="center reveal"><p class="eyebrow">Prebuilt Systems</p><h2>Reference configurations</h2><p class="mut">Order directly or load into the 3D configurator to swap any component.</p></div>
+    <div class="grid" id="homePb" style="margin-top:36px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))"></div>
+  </div></section>
+
+  <section><div class="wrap"><div class="cta reveal">
+    <p class="eyebrow">Start Building</p>
+    <h2>Configure your system in 3D</h2><p class="mut" style="margin:10px auto 24px;max-width:48ch">Press <kbd style="font-family:var(--mono);padding:2px 6px;border:1px solid var(--line-hi);border-radius:4px;color:var(--txt)">⌘K</kbd> anywhere to search components, or open the interactive builder.</p>
+    <a class="btn solid" href="builder.html">Open 3D Configurator</a>
+  </div></div></section>
+</main>
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="models/pc_models_data.js"></script>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script src="js/pc3d.js"></script>
+<script>
+  const hero=createPC(document.getElementById('heroCanvas'),{auto:true,airflow:true,dist:13.2,rgb:0xE5A93C});
+  PREBUILT[1].parts.forEach(id=>hero.set(byId(id).cat,byId(id),false));
+  function setHeroMode(hex,btn){
+    hero.setRGB(hex);
+    btn.parentElement.querySelectorAll('.chip').forEach(c=>{if(c.id!=='heroExpBtn')c.classList.remove('act')});
+    btn.classList.add('act');
+    if(typeof sfx==='function')sfx('install');
+  }
+
+  const anat=createPC(document.getElementById('anatomyCanvas'),{auto:false,airflow:false,dist:10.2,rgb:0xE5A93C});
+  PREBUILT[2].parts.forEach(id=>anat.set(byId(id).cat,byId(id),false));
+  const expRange=document.getElementById('expRange'),expPct=document.getElementById('expPct');
+  const stepCards=[...document.querySelectorAll('.anatomy-step')];
+
+  function applyDeconstruct(v,ry,rx){
+    const p=Math.max(0,Math.min(1,v));
+    anat.setExplodeProgress(p);
+    if(ry!==undefined)anat.setOrbit(ry,rx,10.0-p*0.8);
+    expRange.value=Math.round(p*100);
+    expPct.textContent=Math.round(p*100)+'%';
+  }
+  expRange.addEventListener('input',e=>applyDeconstruct(e.target.value/100));
+  stepCards.forEach(c=>{
+    c.addEventListener('click',()=>{
+      stepCards.forEach(x=>x.style.borderColor='');
+      c.style.borderColor='var(--line-hi)';
+      applyDeconstruct(+c.dataset.exp,+c.dataset.ry,+c.dataset.rx);
+      if(typeof sfx==='function')sfx('install');
+    });
+  });
+  let scrollTick=false;
+  window.addEventListener('scroll',()=>{
+    if(scrollTick)return;
+    scrollTick=true;
+    requestAnimationFrame(()=>{
+      scrollTick=false;
+      const sec=document.getElementById('anatomySec');
+      if(!sec)return;
+      const r=sec.getBoundingClientRect();
+      const span=Math.max(1,r.height-window.innerHeight*0.55);
+      const scrolled=Math.max(0,Math.min(1,(window.innerHeight*0.35-r.top)/span));
+      if(r.top<window.innerHeight&&r.bottom>0){
+        applyDeconstruct(scrolled, 1.15 - scrolled*0.62, 0.14 + Math.sin(scrolled*Math.PI)*0.10);
+        const actIdx=Math.min(stepCards.length-1,Math.floor(scrolled*stepCards.length));
+        stepCards.forEach((c,i)=>c.style.borderColor=(i===actIdx?'var(--line-hi)':''));
+      }
+    });
+  },{passive:true});
+
+  document.getElementById('homePb').innerHTML=PREBUILT.map(p=>`<div class="card reveal" style="display:flex;flex-direction:column"><div class="pimg" style="height:200px;padding:14px"><img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain;transition:transform .35s cubic-bezier(.22,1,.36,1)" alt="${p.name}" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'"></div><span class="eyebrow" style="margin-bottom:6px;font-size:.7rem">${p.tag}</span><h3>${p.name}</h3><p class="mut" style="font-size:.875rem;margin-bottom:18px">${p.desc}</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto"><span class="price">${money(kitPrice(p))}</span><span style="display:flex;gap:8px"><a class="btn sm" href="builder.html?kit=${p.id}">Configure</a><a class="btn sm solid" href="order-confirm.html?id=${p.id}&qty=1">Buy</a></span></div></div>`).join('');
+</script>
+</body>
+</html>

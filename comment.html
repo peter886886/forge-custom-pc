@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comments | FORGE</title>
+<meta name="description" content="Share your experience with FORGE.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="contact.html">Support</a> / Comments</p><h1>Customer <span class="grad">Comments</span></h1><p>Tell us about your FORGE experience. Your feedback helps us improve.</p></div></section>
+<section style="padding-top:10px"><div class="wrap g2" style="align-items:start">
+ <form class="card" id="f" novalidate><h3>Leave a comment</h3>
+  <div class="field"><label>Your rating</label><div class="stars">
+   <input type="radio" name="r" id="s5" value="5"><label for="s5">★</label><input type="radio" name="r" id="s4" value="4"><label for="s4">★</label><input type="radio" name="r" id="s3" value="3"><label for="s3">★</label><input type="radio" name="r" id="s2" value="2"><label for="s2">★</label><input type="radio" name="r" id="s1" value="1"><label for="s1">★</label></div></div>
+  <div class="field"><label for="name">Name *</label><input id="name" name="name" data-rule="req"><div class="err"></div></div>
+  <div class="field"><label for="msg">Comment *</label><textarea id="msg" name="msg" rows="4" data-rule="req|min:5"></textarea><div class="err"></div></div>
+  <button class="btn solid">Post comment</button></form>
+ <div class="wall"><h3>What customers say</h3><div id="wall" style="margin-top:14px"></div></div>
+</div></section>
+</main>
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>const seed=[['Kevin L.',5,'The 3D builder is insane. My PC looked exactly like the preview!'],['Mei W.',5,'Delivered in 4 days, perfect cable management.'],['Jason T.',4,'Great price, staff were very patient with my questions.']];
+const C=JSON.parse(localStorage.getItem('forgeComments')||'[]');
+function card([n,r,m]){const d=document.createElement('div');d.className='card';d.innerHTML='<b></b> <span style="color:var(--warn)"></span><p class="mut"></p>';d.querySelector('b').textContent=n;d.querySelector('span').textContent='★'.repeat(r)+'☆'.repeat(5-r);d.querySelector('p').textContent=m;return d}
+[...C,...seed].forEach(c=>$('#wall').append(card(c)));
+const f=$('#f');f.onsubmit=e=>{e.preventDefault();if(!validate(f))return;const r=+(f.r.value||5),c=[f.name.value,r,f.msg.value];C.unshift(c);localStorage.setItem('forgeComments',JSON.stringify(C.slice(0,10)));$('#wall').prepend(card(c));f.reset();toast('Thanks for your comment!')};</script>
+</body>
+</html>
