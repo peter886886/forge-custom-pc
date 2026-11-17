@@ -11,12 +11,13 @@
 <section class="phero"><div class="wrap formbox card center reveal">
  <div class="check"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
  <h1>Thank you!</h1>
- <p class="mut">Your order has been received and our technicians are on it.</p>
+ <p class="mut">Your order has been received and our Kwun Tong technicians are assigning your build bench.</p>
  <div id="integrityStatus"></div>
  <div class="tblwrap" style="margin:20px 0 24px;text-align:left"><table><tbody id="r"></tbody></table></div>
  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-  <a class="btn solid" href="index.html">Back to Home</a>
-  <a class="btn outline" href="member-dashboard.html">My Orders</a>
+  <a class="btn solid" id="trackOrderBtn" href="order-detail.html">Track Build &amp; Order Details →</a>
+  <a class="btn outline" href="member-dashboard.html">View Invoice / Orders</a>
+  <a class="btn subtle" href="index.html">Back to Home</a>
  </div>
 </div></section>
 </main>
@@ -24,13 +25,56 @@
 <script src="js/main.js"></script>
 <script>
 const q = qs(), id = ticket('FG');
-fillResult($('#r'), { name: 'Name', address: 'Delivery address', pay: 'Payment', items: 'Items' });
+fillResult($('#r'), { name: 'Name', delivery: 'Delivery Method', address: 'Delivery address', pay: 'Payment', items: 'Items' });
 $('#r').insertAdjacentHTML('afterbegin', `<tr><td>Order no.</td><td><b style="font-family:var(--mono)">${esc(id)}</b></td></tr>`);
+$('#trackOrderBtn').href = `order-detail.html?id=${encodeURIComponent(id)}`;
 
 function resolveCatalogTotal(specStr) {
   if (!specStr) return null;
-  const parts = specStr.split(':');
+  const hasForge5 = String(q.promo || '').trim().toUpperCase() === 'FORGE5';
   let rawSub = 0, asm = 0, ok = false;
+
+  if (specStr.startsWith('cart:')) {
+    const entries = specStr.slice(5).split('|').filter(Boolean);
+    if (!entries.length) return null;
+    for (const ent of entries) {
+      const seg = ent.split(':');
+      const kind = seg[0];
+      if (kind === 'p' && seg.length >= 3) {
+        const p = byId(seg[1]);
+        const qt = Math.max(1, Number(seg[2]) || 1);
+        if (!p || !Number.isFinite(qt)) return null;
+        rawSub += p.price * qt;
+        ok = true;
+      } else if (kind === 'k' && seg.length >= 3) {
+        const p = byId(seg[1]);
+        const qt = Math.max(1, Number(seg[2]) || 1);
+        if (!p || !p.parts || !Number.isFinite(qt)) return null;
+        rawSub += kitPrice(p) * qt;
+        ok = true;
+      } else if (kind === 'b' && seg.length >= 3) {
+        const ids = seg[1].split('+').map(s => byId(s.trim())).filter(Boolean);
+        const qt = Math.max(1, Number(seg[2]) || 1);
+        if (!ids.length || !Number.isFinite(qt)) return null;
+        rawSub += ids.reduce((s, p) => s + (p.price || 0), 0) * qt;
+        asm += 99 * qt;
+        ok = true;
+      } else if (kind === 's' && seg.length >= 3) {
+        const pr = Math.max(0, Number(seg[1]));
+        const qt = Math.max(1, Number(seg[2]));
+        if (!Number.isFinite(pr) || !Number.isFinite(qt)) return null;
+        rawSub += pr * qt;
+        ok = true;
+      } else {
+        return null;
+      }
+    }
+    if (!ok) return null;
+    const disc = (user() || hasForge5) ? Math.round(rawSub * 0.05) : 0;
+    return rawSub + asm - disc;
+  }
+
+  const parts = specStr.split(':');
   if (parts[0] === 'svc' && parts.length >= 3) {
     const pr = Math.max(0, Number(parts[1]));
     const qt = Math.max(1, Number(parts[2]));
@@ -54,22 +98,71 @@ function resolveCatalogTotal(specStr) {
     }
   }
   if (!ok) return null;
-  const disc = user() ? Math.round(rawSub * 0.05) : 0;
+  const disc = (user() || hasForge5) ? Math.round(rawSub * 0.05) : 0;
   return rawSub + asm - disc;
+}
+
+function buildItemsList(specStr, fallbackTotal) {
+  if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
+    const c = forgeCart.getCart();
+    if (c.length) return c;
+  }
+  if (specStr) {
+    if (specStr.startsWith('cart:')) {
+      const list = [];
+      specStr.slice(5).split('|').filter(Boolean).forEach(ent => {
+        const seg = ent.split(':');
+        const qt = Math.max(1, Number(seg[2]) || 1);
+        if (seg[0] === 'p') {
+          const p = byId(seg[1]);
+          if (p) list.push({ id: p.id, type: 'part', name: p.name, spec: p.spec, price: p.price, qty: qt, asm: 0, img: `img/products/${p.id}.png` });
+        } else if (seg[0] === 'k') {
+          const k = byId(seg[1]);
+          if (k) list.push({ id: k.id, type: 'kit', name: k.name, spec: k.tag, price: kitPrice(k), qty: qt, asm: 0, img: `img/products/${k.id}.png` });
+        } else if (seg[0] === 'b') {
+          const ids = seg[1].split('+').filter(Boolean);
+          const parts = ids.map(byId).filter(Boolean);
+          const sub = parts.reduce((s, p) => s + p.price, 0);
+          if (parts.length) list.push({ id: 'custom', type: 'build', name: `Custom 3D Build (${parts.length} parts)`, spec: parts.slice(0, 3).map(p => p.name).join(' · '), price: sub, qty: qt, asm: 99, img: 'img/renders/hero_rig_studio.png', items: ids });
+        } else if (seg[0] === 's') {
+          list.push({ id: 'service', type: 'service', name: 'FORGE Lab Service', spec: 'Kwun Tong ISO-9001 Lab', price: Math.max(0, Number(seg[1]) || 0), qty: qt, asm: 0, img: 'img/renders/hero_rig_studio.png' });
+        }
+      });
+      if (list.length) return list;
+    }
+    const parts = specStr.split(':');
+    if (parts[0] === 'svc') {
+      return [{ id: 'service', type: 'service', name: q.items || 'FORGE Certified Service', spec: 'Kwun Tong Engineering Lab', price: Math.max(0, Number(parts[1]) || 0), qty: Math.max(1, Number(parts[2]) || 1), asm: 0, img: 'img/renders/hero_rig_studio.png' }];
+    }
+    if (parts[0] === 'build' && parts[1]) {
+      const ids = parts[1].split(',').map(s => s.trim()).filter(Boolean);
+      const valid = ids.map(byId).filter(Boolean);
+      if (valid.length) return valid.map(p => ({ id: p.id, type: 'part', name: p.name, spec: p.spec, price: p.price, qty: 1, asm: 0, img: `img/products/${p.id}.png` })).concat([{ id: 'asm', type: 'service', name: 'Single-Tech Assembly & 24h OCCT Burn-In', spec: 'Kwun Tong Lab QA Certification', price: 99, qty: 1, asm: 0, img: 'img/renders/hero_rig_studio.png' }]);
+    }
+    const p = byId(parts[0]);
+    if (p) {
+      const qt = Math.max(1, Number(parts[1]) || 1);
+      return [{ id: p.id, type: p.parts ? 'kit' : 'part', name: p.name, spec: p.spec || p.tag || 'FORGE Hardware', price: p.parts ? kitPrice(p) : p.price, qty: qt, asm: 0, img: `img/products/${p.id}.png` }];
+    }
+  }
+  return [{ id: 'order', type: 'part', name: q.items || 'FORGE Hardware Order', spec: 'Verified Order', price: fallbackTotal, qty: 1, asm: 0, img: 'img/renders/hero_rig_studio.png' }];
 }
 
 const submittedTotal = Number(q.total);
 const submittedDisplay = Number.isFinite(submittedTotal) ? submittedTotal : 0;
 let finalTotal = Math.max(0, Number(q.total) || 0);
+let tamperBlocked = false;
 
 if (q.spec) {
   const trustedTotal = resolveCatalogTotal(q.spec);
   if (trustedTotal === null) {
-    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">CIS282 Parameter Tampering Alert</div><p style="font-size:.875rem;color:#FCA5A5">Submitted catalog specification could not be verified against catalog lookup.</p></div>`;
+    tamperBlocked = true;
+    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">ORDER PRICE VERIFICATION ALERT</div><p style="font-size:.875rem;color:#FCA5A5">Submitted catalog specification could not be verified against catalog lookup.</p></div>`;
     $('#r').insertAdjacentHTML('beforeend', `<tr><td>Submitted URL Total</td><td><span class="status s-b" style="margin-right:8px">Rejected</span><s class="mut" style="font-family:var(--mono)">${esc(money(submittedDisplay))}</s></td></tr><tr><td>Total (USD)</td><td><b class="price">${esc(money(finalTotal))}</b></td></tr>`);
   } else if (Math.round(submittedTotal) !== trustedTotal) {
+    tamperBlocked = true;
     finalTotal = trustedTotal;
-    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>CIS282 Parameter Tampering Alert</span></div><p id="tamperMsg" style="font-size:.875rem;line-height:1.5;color:#FCA5A5"></p></div>`;
+    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>ORDER PRICE VERIFICATION ALERT</span></div><p id="tamperMsg" style="font-size:.875rem;line-height:1.5;color:#FCA5A5"></p></div>`;
     $('#tamperMsg').textContent = `URL Parameter Tampering Blocked: Submitted total (${money(submittedDisplay)}) did not match catalog lookup — authoritative total (${money(trustedTotal)}) enforced.`;
     $('#r').insertAdjacentHTML('beforeend', `<tr><td>Submitted URL Total</td><td><span class="status s-b" style="margin-right:8px">Rejected</span><s class="mut" style="font-family:var(--mono)">${esc(money(submittedDisplay))}</s></td></tr><tr><td>Verified Total</td><td><b class="price">${esc(money(trustedTotal))}</b> <span class="mut" style="font-family:var(--mono);font-size:.75rem">(USD)</span></td></tr>`);
   } else {
@@ -81,10 +174,31 @@ if (q.spec) {
   $('#r').insertAdjacentHTML('beforeend', `<tr><td>Total (USD)</td><td><b class="price">${esc(money(finalTotal))}</b></td></tr>`);
 }
 
-const h = JSON.parse(localStorage.getItem('forgeOrders') || '[]');
-h.unshift({ id, total: finalTotal, date: new Date().toLocaleDateString(), items: q.items || '' });
-localStorage.setItem('forgeOrders', JSON.stringify(h.slice(0, 10)));
-localStorage.removeItem('forgeOrder');
+const itemsList = buildItemsList(q.spec, finalTotal);
+const u = user();
+const h = window.ensureSeedOrders ? window.ensureSeedOrders() : JSON.parse(localStorage.getItem('forgeOrders') || '[]');
+h.unshift({
+  id,
+  total: finalTotal,
+  date: new Date().toISOString().slice(0, 10),
+  items: q.items || itemsList.map(x => x.name).join('; '),
+  itemsList,
+  customer: q.name || (u ? u.name : 'Customer'),
+  address: q.address || 'Hong Kong SAR',
+  pay: q.pay || 'Visa / Mastercard',
+  delivery: q.delivery || 'SF Express Insured 5-Day Courier',
+  stage: 1,
+  status: 'Confirmed',
+  tamperBlocked,
+  submittedTotal: tamperBlocked ? submittedDisplay : undefined
+});
+localStorage.setItem('forgeOrders', JSON.stringify(h.slice(0, 20)));
+if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
+  forgeCart.clearCart();
+}
+if (q.src !== 'cart') {
+  localStorage.removeItem('forgeOrder');
+}
 </script>
 </body>
 </html>

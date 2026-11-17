@@ -34,6 +34,7 @@ const EYE_OPEN=`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stro
 const EYE_OFF=`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>`;
 function setRole(r){role=r;$$('.tabs button').forEach(x=>x.classList.toggle('on',x.dataset.r===r));$('#ul').textContent=role==='staff'?'Staff ID':'Email';$('#reg').style.display=role==='staff'?'none':'block';}
 $$('.tabs button').forEach(b=>b.onclick=()=>setRole(b.dataset.r));
+if(qs().role==='staff')setRole('staff');
 $('#eye').onclick=()=>{const p=$('#p'),show=p.type==='password';p.type=show?'text':'password';$('#eye').innerHTML=show?EYE_OFF:EYE_OPEN;$('#eye').setAttribute('aria-label',show?'Hide password':'Show password');};
 $('#demoCust').onclick=()=>{setRole('customer');$('#u').value='demo@forge.hk';$('#p').value='Forge2026';$('#msg').textContent='';validate($('#lf'));toast('Customer demo credentials filled');};
 $('#demoStaff').onclick=()=>{setRole('staff');$('#u').value='staff01';$('#p').value='Admin@2026';$('#msg').textContent='';validate($('#lf'));toast('Staff demo credentials filled');};

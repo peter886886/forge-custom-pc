@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Tracking &amp; Invoice | FORGE</title>
+<meta name="description" content="Track your FORGE custom PC build progress across all 5 Kwun Tong lab stages and print your official itemized invoice.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero">
+  <div class="wrap">
+    <p class="crumb"><a href="index.html">Home</a> / <a href="member-dashboard.html">Orders</a> / Track &amp; Invoice</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+      <div>
+        <h1>Order Tracking &amp; <span class="grad">Invoice</span></h1>
+        <p>Live 5-stage build telemetry from our Kwun Tong ISO-9001 Burn-In Lab and verified tax invoice.</p>
+      </div>
+      <form id="lookupForm" class="no-print" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input id="orderLookup" type="search" placeholder="Enter Order ID (e.g. FG-8419)" aria-label="Search order ID" style="width:220px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#121212;color:var(--txt);font-family:var(--mono);font-size:.84rem;text-transform:uppercase">
+        <button class="btn sm solid" type="submit">Track</button>
+      </form>
+    </div>
+    <div id="orderPills" class="filters no-print" style="margin-top:16px;margin-bottom:0"></div>
+  </div>
+</section>
+
+<section style="padding-top:28px">
+  <div class="wrap" id="orderRoot"></div>
+</section>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const DEFAULT_STAGES = window.FORGE_ORDER_STAGES || [
+  { stage: 1, label: 'Order Confirmed', short: 'Confirmed', sub: 'Payment verified & build ticket queued' },
+  { stage: 2, label: 'Parts Picked & Scanned', short: 'Parts Allocated', sub: 'Serial numbers scanned at Kwun Tong Vault' },
+  { stage: 3, label: 'Single-Tech Assembly & Routing', short: 'In Assembly', sub: 'Custom harness routing & torque check' },
+  { stage: 4, label: '24h OCCT Burn-In Lab', short: '24h OCCT Burn-In', sub: 'Thermal soak, acoustic floor & BIOS EXPO' },
+  { stage: 5, label: 'Dispatched / Ready for Pickup', short: 'Dispatched', sub: 'Insured SF Express or Sino Centre pickup' }
+];
+
+function renderOrderPage() {
+  const orders = window.ensureSeedOrders ? window.ensureSeedOrders() : JSON.parse(localStorage.getItem('forgeOrders') || '[]');
+  const q = qs();
+  const requestedId = String(q.id || '').trim().toUpperCase();
+
+  $('#orderPills').innerHTML = orders.slice(0, 8).map(o => {
+    const active = requestedId ? (String(o.id).toUpperCase() === requestedId) : (o === orders[0]);
+    const st = Math.max(1, Math.min(5, Number(o.stage) || 1));
+    return `<a class="chip sm ${active ? 'on' : ''}" href="order-detail.html?id=${encodeURIComponent(o.id)}" style="font-family:var(--mono)">${esc(o.id)} · Stage ${st}/5</a>`;
+  }).join('');
+
+  if (requestedId) $('#orderLookup').value = requestedId;
+
+  const order = requestedId
+    ? orders.find(o => String(o.id || '').toUpperCase() === requestedId)
+    : orders[0];
+
+  if (!order) {
+    $('#orderRoot').innerHTML = `
+      <div class="card center" style="padding:48px 24px">
+        <h3>Order "${esc(requestedId || 'Unknown')}" not found</h3>
+        <p class="mut" style="margin:8px 0 18px">Verify your order number or select a recent order above.</p>
+        <a class="btn solid" href="order-detail.html">View Latest Order</a>
+      </div>`;
+    return;
+  }
+
+  document.title = `Order ${order.id} | FORGE`;
+  const stageNum = Math.max(1, Math.min(5, Number(order.stage) || 1));
+  const stageMeta = DEFAULT_STAGES[stageNum - 1];
+  const stageBadgeClass = stageNum === 5 ? 's-ok' : (stageNum >= 3 ? 's-w' : 's-ok');
+  const displayStatus = order.status || stageMeta.short;
+
+  const numSeed = order.id.replace(/[^0-9A-Z]/gi, '').slice(-4) || '0001';
+  const lab = order.lab || {
+    tech: 'Devon Lam (Senior Builder)',
+    bios: 'UEFI Updated · EXPO/XMP Verified',
+    noise: '28.4 dBA',
+    temp: '58°C',
+    warranty: `3-Yr On-Site · WRT-${numSeed}HK`
+  };
+
+  let itemsList = Array.isArray(order.itemsList) && order.itemsList.length ? order.itemsList : null;
+  if (!itemsList) {
+    itemsList = [{
+      id: 'order',
+      type: 'part',
+      name: order.items || 'FORGE Custom Order',
+      spec: 'Verified Catalog Specification',
+      price: Number(order.total) || 0,
+      qty: 1,
+      asm: 0,
+      img: 'img/renders/hero_rig_studio.png'
+    }];
+  }
+
+  const lineSub = itemsList.reduce((s, x) => s + (Number(x.price) || 0) * (Number(x.qty) || 1), 0);
+  const lineAsm = itemsList.reduce((s, x) => s + (Number(x.asm) || 0) * (Number(x.qty) || 1), 0);
+
+  const stepperHtml = DEFAULT_STAGES.map(st => {
+    const cls = st.stage < stageNum ? 'done' : (st.stage === stageNum ? 'current' : 'pending');
+    const indicator = st.stage < stageNum
+      ? `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      : st.stage;
+    return `
+      <div class="step-node ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="step-dot">${indicator}</span>
+          <span style="font-family:var(--mono);font-size:.66rem;color:var(--mut)">${st.stage < stageNum ? 'COMPLETED' : (st.stage === stageNum ? 'ACTIVE' : 'QUEUED')}</span>
+        </div>
+        <div class="step-title">${st.stage}. ${esc(st.label)}</div>
+        <div class="step-sub">${esc(st.sub)}</div>
+      </div>`;
+  }).join('');
+
+  const tamperHtml = order.tamperBlocked
+    ? `<div role="alert" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:12px 16px;margin-bottom:20px">
+        <div style="font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">Order Price Verification Alert</div>
+        <p style="font-size:.86rem;color:#FCA5A5">Catalog integrity safeguard blocked a mismatched checkout parameter (${order.submittedTotal !== undefined ? esc(money(order.submittedTotal)) : 'tampered input'}) and enforced authoritative catalog pricing (${esc(money(order.total))}).</p>
+      </div>`
+    : `<div style="margin-bottom:18px"><span class="status s-ok">Catalog Price Integrity Verified</span></div>`;
+
+  const manifestRows = itemsList.map(it => {
+    const qty = Math.max(1, Number(it.qty) || 1);
+    const unit = Number(it.price) || 0;
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            <img class="no-print" src="${esc(it.img || 'img/renders/hero_rig_studio.png')}" alt="${esc(it.name)}" style="width:44px;height:44px;object-fit:contain;background:#111111;border:1px solid var(--line);border-radius:6px;padding:4px;flex-shrink:0">
+            <div>
+              <b>${esc(it.name)}</b>
+              ${it.asm ? `<div class="mut" style="font-family:var(--mono);font-size:.72rem">+${money(it.asm)} Lab Assembly &amp; Burn-In</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="mut" style="font-size:.84rem">${esc(it.spec || 'Standard FORGE Spec')}</td>
+        <td style="font-family:var(--mono)">${qty}</td>
+        <td style="font-family:var(--mono)">${money(unit)}</td>
+        <td class="price">${money(unit * qty)}</td>
+      </tr>`;
+  }).join('');
+
+  $('#orderRoot').innerHTML = `
+    <div class="print-only" style="margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #111111">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <h2 style="margin:0;font-size:18pt;letter-spacing:0.08em">FORGE CUSTOM PC LTD.</h2>
+          <p style="font-size:9pt;margin-top:4px">Showroom: Shop 12, 3/F, Sino Centre, 582 Nathan Road, Mong Kok, Kowloon</p>
+          <p style="font-size:9pt">Assembly Lab: Unit 804, Kwun Tong Industrial Centre, Kowloon · ISO-9001 Certified</p>
+        </div>
+        <div style="text-align:right;font-family:monospace">
+          <b>OFFICIAL TAX INVOICE</b><br>
+          Order: ${esc(order.id)}<br>
+          Date: ${esc(order.date || '—')}
+        </div>
+      </div>
+    </div>
+
+    ${tamperHtml}
+
+    <!-- 5-Stage Visual Build & Fulfillment Progress Tracker -->
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+        <div>
+          <span class="eyebrow" style="margin-bottom:4px">Live Fulfillment Pipeline · Order ${esc(order.id)}</span>
+          <h2 style="margin:0;font-size:1.45rem">Stage ${stageNum} of 5 · ${esc(displayStatus)}</h2>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="status ${stageBadgeClass}">${esc(displayStatus)}</span>
+          <span class="telemetry-pill" style="font-size:.74rem">Placed ${esc(order.date || '—')}</span>
+        </div>
+      </div>
+      <div class="stepper" role="list" aria-label="Order fulfillment stages">
+        ${stepperHtml}
+      </div>
+    </div>
+
+    <!-- Kwun Tong Lab Telemetry Card -->
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <div>
+          <span class="eyebrow" style="margin-bottom:4px">Unit 804 · Kwun Tong Industrial Centre</span>
+          <h3 style="margin:0">Kwun Tong Lab Telemetry &amp; QA Record</h3>
+        </div>
+        <span class="status s-ok">24h OCCT Log Attached</span>
+      </div>
+      <div class="telemetry-grid">
+        <div class="telemetry-box"><span class="mut" style="font-family:var(--mono);font-size:.68rem;display:block">ASSIGNED TECHNICIAN</span><b style="font-size:.9rem;margin-top:4px;display:block">${esc(lab.tech)}</b></div>
+        <div class="telemetry-box"><span class="mut" style="font-family:var(--mono);font-size:.68rem;display:block">BIOS / EXPO PROFILE</span><b style="font-size:.9rem;margin-top:4px;display:block">${esc(lab.bios)}</b></div>
+        <div class="telemetry-box"><span class="mut" style="font-family:var(--mono);font-size:.68rem;display:block">ACOUSTIC FLOOR</span><b style="font-family:var(--mono);font-size:.98rem;margin-top:4px;display:block">${esc(lab.noise)}</b></div>
+        <div class="telemetry-box"><span class="mut" style="font-family:var(--mono);font-size:.68rem;display:block">MAX SUSTAINED LOAD</span><b style="font-family:var(--mono);font-size:.98rem;margin-top:4px;display:block">${esc(lab.temp)}</b></div>
+        <div class="telemetry-box"><span class="mut" style="font-family:var(--mono);font-size:.68rem;display:block">WARRANTY CERTIFICATE</span><b style="font-family:var(--mono);font-size:.86rem;margin-top:4px;display:block;color:var(--ok)">${esc(lab.warranty)}</b></div>
+      </div>
+    </div>
+
+    <!-- Itemized Manifest & Official Invoice -->
+    <div class="card" style="margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <span class="eyebrow" style="margin-bottom:4px">Official Manifest &amp; Invoice</span>
+          <h3 style="margin:0">Hardware &amp; Fulfillment Summary</h3>
+        </div>
+        <div class="mut" style="font-family:var(--mono);font-size:.78rem">Currency: USD ($)</div>
+      </div>
+
+      <div class="tblwrap" style="margin-bottom:18px">
+        <table>
+          <thead>
+            <tr><th>Item / Build</th><th>Specification</th><th>Qty</th><th>Unit</th><th>Line Total</th></tr>
+          </thead>
+          <tbody>
+            ${manifestRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="g2" style="gap:20px;align-items:start">
+        <div style="display:grid;gap:8px;font-size:.88rem;padding:14px;border-radius:10px;border:1px solid var(--line);background:#121212">
+          <div><span class="mut" style="display:inline-block;width:130px">Customer</span><b>${esc(order.customer || 'FORGE Customer')}</b></div>
+          <div><span class="mut" style="display:inline-block;width:130px">Delivery Method</span><span>${esc(order.delivery || 'SF Express Insured 5-Day Courier')}</span></div>
+          <div><span class="mut" style="display:inline-block;width:130px">Delivery Address</span><span>${esc(order.address || 'Hong Kong SAR')}</span></div>
+          <div><span class="mut" style="display:inline-block;width:130px">Payment Method</span><span>${esc(order.pay || 'Visa / Mastercard')}</span></div>
+        </div>
+        <div style="display:grid;gap:8px;font-size:.9rem;padding:14px;border-radius:10px;border:1px solid var(--line);background:#121212">
+          <div style="display:flex;justify-content:space-between"><span class="mut">Items Subtotal</span><span style="font-family:var(--mono)">${money(lineSub)}</span></div>
+          ${lineAsm ? `<div style="display:flex;justify-content:space-between"><span class="mut">Lab Assembly &amp; 24h Burn-In</span><span style="font-family:var(--mono)">${money(lineAsm)}</span></div>` : ''}
+          ${(lineSub + lineAsm > Number(order.total)) ? `<div style="display:flex;justify-content:space-between"><span class="mut">Member / Promo Discount</span><span style="font-family:var(--mono);color:var(--ok)">-${money((lineSub + lineAsm) - Number(order.total))}</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px solid var(--line)">
+            <b>Verified Total (USD)</b>
+            <b class="price" style="font-size:1.45rem">${money(order.total || 0)}</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <button class="btn solid" type="button" id="printInvoiceBtn">Print Official Invoice</button>
+      <a class="btn" href="complaint.html?order=${encodeURIComponent(order.id)}">Report Issue for This Order</a>
+      <a class="btn subtle" href="member-dashboard.html">Back to My Orders</a>
+    </div>
+  `;
+
+  $('#printInvoiceBtn').onclick = () => window.print();
+}
+
+$('#lookupForm').onsubmit = e => {
+  e.preventDefault();
+  const val = $('#orderLookup').value.trim().toUpperCase();
+  if (!val) return;
+  location.href = `order-detail.html?id=${encodeURIComponent(val)}`;
+};
+
+window.addEventListener('storage', e => {
+  if (e.key === 'forgeOrders') renderOrderPage();
+});
+
+renderOrderPage();
+</script>
+</body>
+</html>

@@ -135,8 +135,70 @@
   </div></section>
 
   <section><div class="wrap">
-    <div class="center reveal"><p class="eyebrow">Prebuilt Systems</p><h2>Reference configurations</h2><p class="mut">Order directly or load into the 3D configurator to swap any component.</p></div>
+    <div class="center reveal"><p class="eyebrow">Prebuilt Systems</p><h2>Reference configurations</h2><p class="mut">Order directly, add to your bag, or load into the 3D configurator to swap any component.</p></div>
     <div class="grid" id="homePb" style="margin-top:36px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))"></div>
+  </div></section>
+
+  <!-- 4-Step Bespoke Build & QC Workflow + HK Commercial Bar -->
+  <section style="border-top:1px solid var(--line);background:var(--bg)"><div class="wrap">
+    <div class="center reveal" style="max-width:64ch;margin:0 auto 36px">
+      <p class="eyebrow">Bespoke Assembly &amp; QC Pipeline</p>
+      <h2>Four steps from 3D spec to your desk</h2>
+      <p class="mut">Every custom rig follows a documented engineering workflow inside our Kwun Tong ISO-9001 burn-in laboratory.</p>
+    </div>
+
+    <div class="grid reveal" style="margin-bottom:28px">
+      <div class="card">
+        <span class="tag">01 · Configure in 3D</span>
+        <h3 style="margin-top:12px">Real-time WebGL clearance</h3>
+        <p class="mut" style="font-size:.875rem">Choose from 53 components with live socket matching, PSU headroom validation, and 1080p/1440p/4K FPS telemetry.</p>
+      </div>
+      <div class="card">
+        <span class="tag">02 · Price-Verified Checkout</span>
+        <h3 style="margin-top:12px">Authoritative USD catalog check</h3>
+        <p class="mut" style="font-size:.875rem">Orders verify every SKU against catalog pricing with automatic 5% member hardware discounts and multi-item bag support.</p>
+      </div>
+      <div class="card">
+        <span class="tag">03 · Single-Tech Assembly</span>
+        <h3 style="margin-top:12px">24h Kwun Tong OCCT burn-in</h3>
+        <p class="mut" style="font-size:.875rem">One senior technician cables your system with custom combs, tunes EXPO/XMP profiles, and logs 24-hour thermal stability.</p>
+      </div>
+      <div class="card">
+        <span class="tag">04 · Live 5-Stage Tracking</span>
+        <h3 style="margin-top:12px">5-day insured HK delivery</h3>
+        <p class="mut" style="font-size:.875rem">Follow stages 1–5 live from parts allocation to SF Express insured dispatch or Mong Kok Sino Centre pickup.</p>
+      </div>
+    </div>
+
+    <div class="g2 reveal" style="gap:20px;align-items:stretch;margin-bottom:24px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <img src="img/renders/showroom_bench.png" alt="Kwun Tong Burn-In Lab Workstation Bench" style="width:100%;height:260px;object-fit:cover;display:block;background:#111111">
+        <div style="padding:18px 20px;border-top:1px solid var(--line)">
+          <span class="eyebrow" style="margin-bottom:4px">Kwun Tong ISO-9001 Lab</span>
+          <h3 style="margin-bottom:4px">24-Hour Thermal &amp; Acoustic Verification Bench</h3>
+          <p class="mut" style="font-size:.86rem">Every build undergoes dual-loop OCCT CPU+GPU stress testing and dBA calibration before expanding-foam packaging.</p>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <img src="img/renders/exploded_blueprint.png" alt="Exploded 3D PC Architecture Blueprint" style="width:100%;height:260px;object-fit:cover;display:block;background:#111111">
+        <div style="padding:18px 20px;border-top:1px solid var(--line)">
+          <span class="eyebrow" style="margin-bottom:4px">CAD Clearance Standard</span>
+          <h3 style="margin-bottom:4px">Zero-Conflict Exploded Assembly Architecture</h3>
+          <p class="mut" style="font-size:.86rem">Triple-slot RTX 50-Series cards, 360mm radiators, and DDR5 DIMMs are pre-validated to eliminate interference.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reveal" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:#121212">
+      <div>
+        <span class="eyebrow" style="margin-bottom:4px">Hong Kong Commercial &amp; Enterprise Procurement</span>
+        <p style="font-size:.94rem;font-weight:500">Corporate invoicing &amp; multi-node studio deployment · Accepted locally: <span style="font-family:var(--mono);color:var(--pri)">FPS · PayMe · Octopus · Visa / Mastercard</span> · <span style="color:var(--ok)">3-Yr On-Site HK Warranty</span></p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn sm solid" href="inquiry.html">Enterprise Quote</a>
+        <a class="btn sm subtle" href="order-detail.html">Track Order</a>
+      </div>
+    </div>
   </div></section>
 
   <!-- Lab Frametime Benchmarks & Verified HK Client Builds -->
@@ -334,7 +396,33 @@
     });
   },{passive:true});
 
-  document.getElementById('homePb').innerHTML=PREBUILT.map(p=>`<div class="card reveal" style="display:flex;flex-direction:column"><div class="pimg" style="height:200px;padding:14px"><img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain;transition:transform .35s cubic-bezier(.22,1,.36,1)" alt="${p.name}" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'"></div><span class="eyebrow" style="margin-bottom:6px;font-size:.7rem">${p.tag}</span><h3>${p.name}</h3><p class="mut" style="font-size:.875rem;margin-bottom:18px">${p.desc}</p><div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto"><span class="price">${money(kitPrice(p))}</span><span style="display:flex;gap:8px"><a class="btn sm" href="builder.html?kit=${p.id}">Configure</a><a class="btn sm solid" href="order-confirm.html?id=${p.id}&qty=1">Buy</a></span></div></div>`).join('');
+  window.addHomeKit = function(id) {
+    const p = byId(id);
+    if (!p) return;
+    const item = {
+      key: 'kit:' + p.id,
+      id: p.id,
+      type: 'kit',
+      name: p.name,
+      spec: p.tag,
+      price: kitPrice(p),
+      qty: 1,
+      img: 'img/products/' + p.id + '.png',
+      asm: 0,
+      items: p.parts
+    };
+    if (typeof forgeCart !== 'undefined' && forgeCart && typeof forgeCart.addToCart === 'function') {
+      forgeCart.addToCart(item, true);
+    } else {
+      let c = [];
+      try { c = JSON.parse(localStorage.getItem('forgeCart') || '[]'); } catch (e) { c = []; }
+      const hit = c.find(x => x.key === item.key);
+      if (hit) hit.qty += 1; else c.push(item);
+      localStorage.setItem('forgeCart', JSON.stringify(c));
+      if (typeof toast === 'function') toast(p.name + ' added to bag');
+    }
+  };
+  document.getElementById('homePb').innerHTML=PREBUILT.map(p=>`<div class="card reveal" style="display:flex;flex-direction:column"><div class="pimg" style="height:200px;padding:14px"><img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain;transition:transform .35s cubic-bezier(.22,1,.36,1)" alt="${p.name}" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'"></div><span class="eyebrow" style="margin-bottom:6px;font-size:.7rem">${p.tag}</span><h3>${p.name}</h3><p class="mut" style="font-size:.875rem;margin-bottom:18px">${p.desc}</p><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:auto"><span class="price">${money(kitPrice(p))}</span><span style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn sm" href="builder.html?kit=${p.id}">Configure</a><button type="button" class="btn sm subtle" onclick="addHomeKit('${p.id}')">Add to Bag</button><a class="btn sm solid" href="order-confirm.html?id=${p.id}&qty=1">Buy</a></span></div></div>`).join('');
 </script>
 </body>
 </html>

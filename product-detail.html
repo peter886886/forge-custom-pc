@@ -88,7 +88,8 @@
   <div class="field" style="max-width:140px;margin-top:18px"><label for="qty">Quantity</label><input type="number" id="qty" value="1" min="1" max="10"></div>
   <div style="display:flex;gap:10px;margin-top:18px;flex-wrap:wrap">
    <a class="btn solid" id="buy">Buy Now</a>
-   <a class="btn" id="add3d">Install in 3D Builder →</a>
+   <button class="btn" id="addBag" type="button">Add to Bag</button>
+   <a class="btn subtle" id="add3d">Install in 3D Builder →</a>
   </div>
   <h3 style="margin-top:28px;margin-bottom:10px">Specifications</h3>
   <div class="tblwrap"><table id="spec"></table></div>
@@ -109,6 +110,8 @@
 </section>
 </main>
 <script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="models/pc_models_data.js"></script>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
 <script src="js/pc3d.js"></script>
@@ -244,6 +247,19 @@ $('#rigExplodeBtn').onclick = function() {
 };
 
 $('#buy').onclick = () => location.href = `order-confirm.html?id=${p.id}&qty=${Math.max(1, Math.min(99, Math.floor(+$('#qty').value || 1)))}`;
+$('#addBag').onclick = () => {
+  if (typeof forgeCart === 'undefined') return;
+  const qty = Math.max(1, Math.min(99, Math.floor(+$('#qty').value || 1)));
+  forgeCart.addToCart({
+    id: p.id,
+    type: 'part',
+    name: p.name,
+    spec: p.spec,
+    price: p.price,
+    qty,
+    img: `img/products/${p.id}.png`
+  });
+};
 $('#add3d').href = 'builder.html?add=' + p.id;
 $('#spec').innerHTML = [
   ['Category', CATS[p.cat]],
@@ -276,12 +292,18 @@ $('#pairedAcc').innerHTML = pairedParts.map(acc => `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:6px">
       <b class="price" style="font-size:1rem">${money(acc.price)}</b>
       <div style="display:flex;gap:6px">
-        <a class="btn sm" href="product-detail.html?id=${acc.id}">Details</a>
+        <button class="btn sm" type="button" data-acc-bag="${acc.id}">+ Bag</button>
         <a class="btn sm solid" href="order-confirm.html?id=${acc.id}&qty=1">Buy</a>
       </div>
     </div>
   </div>
 `).join('');
+$('#pairedAcc').onclick = e => {
+  const b = e.target.closest('[data-acc-bag]');
+  if (!b || typeof forgeCart === 'undefined') return;
+  const acc = byId(b.dataset.accBag);
+  if (acc) forgeCart.addToCart({ id: acc.id, type: 'part', name: acc.name, spec: acc.spec, price: acc.price, qty: 1, img: `img/products/${acc.id}.png` });
+};
 </script>
 </body>
 </html>

@@ -36,9 +36,12 @@
           </div>
           <h4 style="font-size:.9rem;margin:0 0 2px"><a href="product-detail.html?id=a1" style="color:var(--txt)">Braided Cable Kit</a></h4>
           <p class="mut" style="font-size:.76rem;margin:0 0 10px">16AWG PET + Anodized Combs</p>
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
             <b class="price" style="font-size:.98rem">$49</b>
-            <button class="btn sm" type="button" style="padding:4px 10px;font-size:.75rem" onclick="open3DModal(byId('a1'))">3D Preview</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" type="button" style="padding:4px 8px;font-size:.73rem" onclick="open3DModal(byId('a1'))">3D</button>
+              <button class="btn sm solid" type="button" style="padding:4px 8px;font-size:.73rem" onclick="addPartToBag('a1')">+ Bag</button>
+            </div>
           </div>
         </div>
         <div class="card" style="padding:12px;background:#111111">
@@ -48,9 +51,12 @@
           </div>
           <h4 style="font-size:.9rem;margin:0 0 2px"><a href="product-detail.html?id=a4" style="color:var(--txt)">CNC GPU Anti-Sag Arm</a></h4>
           <p class="mut" style="font-size:.76rem;margin:0 0 10px">Magnetic 6061-T6 Support</p>
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
             <b class="price" style="font-size:.98rem">$25</b>
-            <button class="btn sm" type="button" style="padding:4px 10px;font-size:.75rem" onclick="open3DModal(byId('a4'))">3D Preview</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" type="button" style="padding:4px 8px;font-size:.73rem" onclick="open3DModal(byId('a4'))">3D</button>
+              <button class="btn sm solid" type="button" style="padding:4px 8px;font-size:.73rem" onclick="addPartToBag('a4')">+ Bag</button>
+            </div>
           </div>
         </div>
         <div class="card" style="padding:12px;background:#111111">
@@ -60,9 +66,12 @@
           </div>
           <h4 style="font-size:.9rem;margin:0 0 2px"><a href="product-detail.html?id=a6" style="color:var(--txt)">5.0" IPS Sensor Panel</a></h4>
           <p class="mut" style="font-size:.76rem;margin:0 0 10px">800×480 USB-C Telemetry Display</p>
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
             <b class="price" style="font-size:.98rem">$59</b>
-            <button class="btn sm" type="button" style="padding:4px 10px;font-size:.75rem" onclick="open3DModal(byId('a6'))">3D Preview</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" type="button" style="padding:4px 8px;font-size:.73rem" onclick="open3DModal(byId('a6'))">3D</button>
+              <button class="btn sm solid" type="button" style="padding:4px 8px;font-size:.73rem" onclick="addPartToBag('a6')">+ Bag</button>
+            </div>
           </div>
         </div>
         <div class="card" style="padding:12px;background:#111111">
@@ -72,9 +81,12 @@
           </div>
           <h4 style="font-size:.9rem;margin:0 0 2px"><a href="product-detail.html?id=a2" style="color:var(--txt)">UNI FAN TL LCD 3-Pack</a></h4>
           <p class="mut" style="font-size:.76rem;margin:0 0 10px">1.6" IPS Sensor Screen per Fan</p>
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
             <b class="price" style="font-size:.98rem">$149</b>
-            <button class="btn sm" type="button" style="padding:4px 10px;font-size:.75rem" onclick="open3DModal(byId('a2'))">3D Preview</button>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" type="button" style="padding:4px 8px;font-size:.73rem" onclick="open3DModal(byId('a2'))">3D</button>
+              <button class="btn sm solid" type="button" style="padding:4px 8px;font-size:.73rem" onclick="addPartToBag('a2')">+ Bag</button>
+            </div>
           </div>
         </div>
       </div>
@@ -136,6 +148,7 @@
       <span class="price" id="m3dPrice" style="font-size:1.45rem">$1,999</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <a class="btn sm" id="m3dDetail">Full Specs &amp; 3D Rig →</a>
+        <button class="btn sm" type="button" id="m3dBag">Add to Bag</button>
         <a class="btn sm solid" id="m3dBuy">Buy Now</a>
       </div>
     </div>
@@ -143,11 +156,27 @@
 </div>
 </main>
 <script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="models/pc_models_data.js"></script>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
 <script src="js/pc3d.js"></script>
 <script>
 let cat = 'all', tbl = false, quickViewer = null, modalTimer = null;
+
+function addPartToBag(id) {
+  const p = byId(id);
+  if (!p || typeof forgeCart === 'undefined') return;
+  forgeCart.addToCart({
+    id: p.id,
+    type: 'part',
+    name: p.name,
+    spec: p.spec,
+    price: p.price,
+    qty: 1,
+    img: `img/products/${p.id}.png`
+  });
+}
 
 const urlParams = qs();
 if (urlParams.cat && CATS[urlParams.cat]) cat = urlParams.cat;
@@ -211,6 +240,7 @@ function open3DModal(p, startTab) {
   $('#m3dPrice').textContent = money(p.price);
   $('#m3dDetail').href = 'product-detail.html?id=' + p.id;
   $('#m3dBuy').href = 'order-confirm.html?id=' + p.id + '&qty=1';
+  $('#m3dBag').onclick = () => addPartToBag(p.id);
   $('#mEffectImg').src = `img/installed/${p.id}.png`;
   $('#mStudioImg').src = `img/products/${p.id}.png`;
 
@@ -253,12 +283,13 @@ function draw() {
       </div>
       <h3 style="margin-top:10px;font-size:1.02rem"><a href="product-detail.html?id=${p.id}" style="color:var(--txt)">${esc(p.name)}</a></h3>
       <p class="mut" style="font-size:.83rem;margin:4px 0 14px">${esc(p.spec)}</p>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:4px;margin-bottom:10px">
         <span class="price">${money(p.price)}</span>
-        <div style="display:flex;gap:6px">
-          <a class="btn sm" href="product-detail.html?id=${p.id}">Details</a>
-          <a class="btn sm solid" href="${buy(p)}">Buy</a>
-        </div>
+        <a class="mut" style="font-size:.78rem;text-decoration:underline;text-underline-offset:3px" href="product-detail.html?id=${p.id}">Details &amp; Specs</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn sm" type="button" style="justify-content:center;white-space:nowrap" onclick="addPartToBag('${p.id}')">Add to Bag</button>
+        <a class="btn sm solid" style="justify-content:center;white-space:nowrap" href="${buy(p)}">Buy Now</a>
       </div>
     </div>
   `).join('') || '<p class="mut" style="grid-column:1/-1;text-align:center;padding:40px 0">No components or accessories found.</p>';
@@ -275,9 +306,10 @@ function draw() {
       <td class="mut">${esc(p.spec)}</td>
       <td class="price">${money(p.price)}</td>
       <td>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;white-space:nowrap">
           <button class="btn sm" type="button" onclick="open3DModal(byId('${p.id}'),'3d')">3D Preview</button>
           <a class="btn sm" href="product-detail.html?id=${p.id}">Details</a>
+          <button class="btn sm" type="button" onclick="addPartToBag('${p.id}')">Add to Bag</button>
           <a class="btn sm solid" href="${buy(p)}">Buy</a>
         </div>
       </td>

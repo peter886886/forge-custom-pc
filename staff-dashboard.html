@@ -3,51 +3,621 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Staff Dashboard | FORGE</title>
-<meta name="description" content="FORGE internal staff dashboard.">
+<meta name="description" content="FORGE internal back-office operations, fulfillment, 53-SKU inventory, and support console.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
 <section><div class="wrap">
- <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px"><div><p class="eyebrow">Staff portal</p><h2>Operations <span class="grad">Dashboard</span></h2></div><button class="btn subtle sm" id="out">Log out</button></div>
- <div class="grid" style="margin:20px 0">
-  <div class="card kpi"><span class="mut">Revenue (Nov)</span><b data-count="248600" data-pre="$" data-suf="">$0</b></div>
-  <div class="card kpi"><span class="mut">Orders in progress</span><b data-count="37">0</b></div>
-  <div class="card kpi"><span class="mut">Open tickets</span><b id="tk">0</b></div>
-  <div class="card kpi"><span class="mut">Satisfaction</span><b data-count="98" data-suf="%">0</b></div>
- </div>
- <div class="g2" style="align-items:start">
-  <div class="card"><h3>Weekly sales</h3><div id="chart" style="display:flex;align-items:flex-end;gap:12px;height:210px;padding-top:16px;margin-top:18px"></div></div>
-  <div class="card"><h3>Latest customer tickets</h3><div class="tblwrap" style="margin-top:14px"><table><thead><tr><th>Ref</th><th>Name</th><th>Message</th></tr></thead><tbody id="tl"></tbody></table></div></div>
- </div>
- <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:32px 0 14px">
-  <div style="display:flex;align-items:baseline;gap:10px">
-   <h3 style="margin:0">Inventory</h3>
-   <span class="mut" id="invCount" style="font-family:var(--mono);font-size:.78rem"></span>
+ <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+  <div>
+   <p class="eyebrow">Back-Office Operations Console</p>
+   <h2>Operations <span class="grad">Dashboard</span></h2>
   </div>
-  <div class="field" style="margin:0;min-width:250px;flex:0 1 320px">
-   <input id="invQ" type="search" placeholder="Filter 53 parts by name or category…" aria-label="Filter inventory">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+   <span class="status s-ok" id="opBadge">Staff 01 · Kwun Tong Lab</span>
+   <a class="btn subtle sm" href="index.html">Storefront →</a>
+   <button class="btn subtle sm" id="out" type="button">Log out</button>
   </div>
  </div>
- <div class="tblwrap"><table><thead><tr><th>Part</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead><tbody id="inv"></tbody></table></div>
+
+ <div class="grid" style="margin:22px 0">
+  <div class="card kpi">
+   <span class="mut">Revenue (Nov)</span>
+   <b id="kpiRev" data-count="248600" data-pre="$" data-suf="">$248,600</b>
+   <small class="mut" id="kpiRevDelta" style="font-family:var(--mono);font-size:.72rem">Baseline $248,600</small>
+  </div>
+  <div class="card kpi">
+   <span class="mut">Active Build Queue</span>
+   <b id="kpiQueue">0</b>
+   <small class="mut" style="font-family:var(--mono);font-size:.72rem">Stages 1–4 in progress</small>
+  </div>
+  <div class="card kpi">
+   <span class="mut">Open Tickets</span>
+   <b id="tk">0</b>
+   <small class="mut" style="font-family:var(--mono);font-size:.72rem">Support &amp; RMA queue</small>
+  </div>
+  <div class="card kpi">
+   <span class="mut">OCCT Pass Rate</span>
+   <b data-count="98" data-suf=".4%">98.4%</b>
+   <small class="mut" style="font-family:var(--mono);font-size:.72rem">24h Kwun Tong thermal test</small>
+  </div>
+ </div>
+
+ <div class="tabs" id="staffTabs" role="tablist">
+  <button type="button" class="on" data-tab="overview">Overview &amp; Lab Monitor</button>
+  <button type="button" data-tab="orders">Orders &amp; Fulfillment</button>
+  <button type="button" data-tab="inventory">Inventory &amp; Pricing (53 SKUs)</button>
+  <button type="button" data-tab="support">Support &amp; Reviews</button>
+ </div>
+
+ <!-- Tab 1: Overview & Lab Monitor -->
+ <div class="tpane on" id="tab-overview">
+  <div class="g2" style="align-items:start;gap:24px">
+   <div class="card" style="min-width:0">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
+     <h3 style="margin:0">7-Day Order Volume</h3>
+     <span class="mut" style="font-family:var(--mono);font-size:.74rem">478 builds / wk</span>
+    </div>
+    <div id="chart" style="display:flex;align-items:flex-end;gap:12px;height:215px;padding-top:16px;margin-top:18px"></div>
+   </div>
+
+   <div class="card" style="min-width:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+     <h3 style="margin:0">Kwun Tong Burn-In Rack Monitor</h3>
+     <span class="status s-ok">22°C Ambient · 4/4 Bays Active</span>
+    </div>
+    <div id="burnInRack" style="display:grid;gap:10px"></div>
+   </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <h3 style="margin:0">Recent Support Tickets</h3>
+    <button type="button" class="btn sm subtle" onclick="switchStaffTab('support')">Manage All Tickets →</button>
+   </div>
+   <div class="tblwrap">
+    <table>
+     <thead><tr><th>Ref</th><th>Type</th><th>Customer</th><th>Message</th><th>Status</th></tr></thead>
+     <tbody id="tl"></tbody>
+    </table>
+   </div>
+  </div>
+ </div>
+
+ <!-- Tab 2: Orders & Fulfillment -->
+ <div class="tpane" id="tab-orders">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+   <div class="filters" id="ordStageChips" style="margin:0">
+    <button type="button" class="chip sm on" data-stage="all">All Stages</button>
+    <button type="button" class="chip sm" data-stage="1">1 · Confirmed</button>
+    <button type="button" class="chip sm" data-stage="2">2 · Allocated</button>
+    <button type="button" class="chip sm" data-stage="3">3 · Assembly</button>
+    <button type="button" class="chip sm" data-stage="4">4 · Burn-In</button>
+    <button type="button" class="chip sm" data-stage="5">5 · Dispatched</button>
+   </div>
+   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span class="mut" id="ordCount" style="font-family:var(--mono);font-size:.78rem"></span>
+    <div class="field" style="margin:0;min-width:230px">
+     <input id="ordQ" type="search" placeholder="Search order ID, customer, or items…" aria-label="Search orders">
+    </div>
+   </div>
+  </div>
+  <div class="tblwrap">
+   <table>
+    <thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Hardware / Items</th><th>Total</th><th>Fulfillment Stage</th><th>Action</th></tr></thead>
+    <tbody id="ordTbl"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- Tab 3: Inventory & Pricing (53 SKUs) -->
+ <div class="tpane" id="tab-inventory">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <div class="field" style="margin:0;min-width:170px">
+     <select id="invCat" aria-label="Filter inventory by category"></select>
+    </div>
+    <div class="filters" id="invStatusChips" style="margin:0">
+     <button type="button" class="chip sm on" data-st="all">All</button>
+     <button type="button" class="chip sm" data-st="low">Low</button>
+     <button type="button" class="chip sm" data-st="reorder">Reorder</button>
+    </div>
+   </div>
+   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span class="mut" id="invCount" style="font-family:var(--mono);font-size:.78rem"></span>
+    <div class="field" style="margin:0;min-width:250px">
+     <input id="invQ" type="search" placeholder="Filter 53 parts by name or category…" aria-label="Filter inventory">
+    </div>
+   </div>
+  </div>
+  <div class="tblwrap">
+   <table>
+    <thead><tr><th>SKU</th><th>Component</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Restock</th></tr></thead>
+    <tbody id="inv"></tbody>
+   </table>
+  </div>
+ </div>
+
+ <!-- Tab 4: Support & Reviews -->
+ <div class="tpane" id="tab-support">
+  <div class="card">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div>
+     <h3 style="margin:0">Customer Support &amp; Complaint Tickets</h3>
+     <p class="mut" style="font-size:.82rem;margin-top:2px">Changes persist immediately to localStorage.forgeTickets.</p>
+    </div>
+    <span class="mut" id="supCount" style="font-family:var(--mono);font-size:.78rem"></span>
+   </div>
+   <div class="tblwrap">
+    <table>
+     <thead><tr><th>Ticket Ref</th><th>Type</th><th>Customer</th><th>Date</th><th>Summary</th><th>Status</th></tr></thead>
+     <tbody id="supTbl"></tbody>
+    </table>
+   </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <div>
+     <h3 style="margin:0">Customer Reviews Moderation</h3>
+     <p class="mut" style="font-size:.82rem;margin-top:2px">Moderate submissions from the Customer Comments wall (localStorage.forgeComments).</p>
+    </div>
+    <a class="btn sm subtle" href="comment.html">View Public Wall →</a>
+   </div>
+   <div id="revList" style="display:grid;gap:12px"></div>
+  </div>
+ </div>
+
 </div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>const U=user();if(!U||U.role!=='staff'){location.href='login.html'};
-$('#out').onclick=()=>{localStorage.removeItem('forgeUser');location.href='login.html'};
-const W=[['Mon',42],['Tue',58],['Wed',51],['Thu',73],['Fri',88],['Sat',100],['Sun',66]];
-$('#chart').innerHTML=W.map(([d,v])=>`<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px"><span style="font-family:var(--mono);font-size:.72rem;color:var(--txt);font-variant-numeric:tabular-nums">${v}</span><div title="${v} orders" style="width:100%;height:${Math.round(v*1.4)}px;background:linear-gradient(180deg, var(--pri), #27272A);border-radius:6px 6px 0 0;transition:opacity .2s" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'"></div><small class="mut" style="font-family:var(--mono);font-size:.72rem">${d}</small></div>`).join('');
-const T=JSON.parse(localStorage.getItem('forgeTickets')||'[]');$('#tk').textContent=T.length+5;
-$('#tl').innerHTML=T.slice(0,6).map(t=>`<tr><td>${esc(t.id)}</td><td>${esc(t.name)}</td><td>${esc(t.msg)}</td></tr>`).join('')||'<tr><td colspan="3" class="mut">No new tickets.</td></tr>';
-const indexedParts=PARTS.map((p,i)=>({p,stock:(i*37+11)%60}));
-function renderInv(q=''){
- const needle=q.trim().toLowerCase();
- const rows=indexedParts.filter(({p})=>!needle||p.name.toLowerCase().includes(needle)||CATS[p.cat].toLowerCase().includes(needle)||p.id.toLowerCase().includes(needle));
- $('#invCount').textContent=`${rows.length} / ${PARTS.length} items`;
- $('#inv').innerHTML=rows.map(({p,stock})=>`<tr><td>${esc(p.name)}</td><td>${esc(CATS[p.cat])}</td><td style="font-family:var(--mono)">${money(p.price)}</td><td style="font-family:var(--mono)">${stock}</td><td><span class="status ${stock<10?'s-b':stock<25?'s-w':'s-ok'}">${stock<10?'Reorder':stock<25?'Low':'OK'}</span></td></tr>`).join('')||'<tr><td colspan="5" class="mut center">No matching components found.</td></tr>';
+<script>
+const U = user();
+if (!U || U.role !== 'staff') {
+  location.href = 'login.html?role=staff';
 }
+
+$('#opBadge').textContent = `${U ? U.name : 'Staff 01'} · Kwun Tong Lab`;
+$('#out').onclick = () => {
+  localStorage.removeItem('forgeUser');
+  location.href = 'login.html?role=staff';
+};
+
+const BASE_REVENUE = 248600;
+const SEED_IDS = new Set(['FG-8419', 'FG-8372', 'FG-8295']);
+const STAGES = {
+  1: 'Order Confirmed',
+  2: 'Parts Allocated',
+  3: 'In Assembly',
+  4: '24h OCCT Burn-In',
+  5: 'Dispatched'
+};
+const STAGE_LABELS = {
+  1: '1 · Order Confirmed',
+  2: '2 · Parts Allocated',
+  3: '3 · In Assembly',
+  4: '4 · 24h OCCT Burn-In',
+  5: '5 · Dispatched'
+};
+const FALLBACK_ORDERS = [
+  {
+    id: 'FG-8419',
+    date: '2026-11-15',
+    customer: 'Kenji Leung',
+    items: 'FORGE Titan Ultra 2026 (Prebuilt System)',
+    itemsList: [{ id: 'pb3', type: 'kit', name: 'FORGE Titan Ultra 2026', spec: 'Core Ultra 9 285K · RTX 5090 32GB · 64GB DDR5-7200', price: 5353, qty: 1, asm: 0, img: 'img/products/pb3.png' }],
+    total: 5353,
+    stage: 4,
+    status: '24h OCCT Burn-In',
+    delivery: 'SF Express Insured 5-Day Courier'
+  },
+  {
+    id: 'FG-8372',
+    date: '2026-11-12',
+    customer: 'Chloe Tam · Atelier K',
+    items: 'FORGE Studio Creator 2026 (Prebuilt System)',
+    itemsList: [{ id: 'pb4', type: 'kit', name: 'FORGE Studio Creator 2026', spec: 'Ryzen 9 9950X · RTX 5080 16GB · 64GB DDR5-6000', price: 3493, qty: 1, asm: 0, img: 'img/products/pb4.png' }],
+    total: 3493,
+    stage: 5,
+    status: 'Dispatched',
+    delivery: 'SF Express Insured 5-Day Courier'
+  },
+  {
+    id: 'FG-8295',
+    date: '2026-11-16',
+    customer: 'Ryan Cheung',
+    items: 'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)',
+    itemsList: [{ id: 'pb2', type: 'build', name: 'Custom 3D Build · Apex Edition', spec: 'Ryzen 7 9800X3D · RTX 5070 Ti · HydroShift 360 + UNI FAN LCD', price: 2625, qty: 1, asm: 99, img: 'img/products/pb2.png', items: ['c3', 'm4', 'r2', 'g4', 's2', 'p2', 'k3', 'x1', 'a1', 'a4', 'a2'] }],
+    total: 2724,
+    stage: 3,
+    status: 'In Assembly',
+    delivery: 'Mong Kok Sino Centre Showroom Pickup'
+  }
+];
+
+function loadOrders() {
+  if (typeof ensureSeedOrders === 'function') {
+    const list = ensureSeedOrders();
+    if (Array.isArray(list) && list.length) return list;
+  }
+  let cur = [];
+  try { cur = JSON.parse(localStorage.getItem('forgeOrders') || '[]'); } catch (e) { cur = []; }
+  if (!Array.isArray(cur)) cur = [];
+  const have = new Set(cur.map(o => o.id));
+  FALLBACK_ORDERS.forEach(seed => {
+    if (!have.has(seed.id)) cur.push({ ...seed });
+  });
+  localStorage.setItem('forgeOrders', JSON.stringify(cur));
+  return cur;
+}
+
+function saveOrders(list) {
+  localStorage.setItem('forgeOrders', JSON.stringify(list));
+}
+
+const DEFAULT_TICKETS = [
+  { id: 'INQ-8821', type: 'INQ', name: 'Derek Lam', msg: 'Bulk quote for 6x RTX 5080 studio nodes with 4h on-site SLA', date: '2026-11-16', status: 'Open' },
+  { id: 'CMP-8814', type: 'CMP', name: 'Chloe Ng', msg: 'SF Express driver requested rescheduled evening drop-off in Shatin', date: '2026-11-15', status: 'In Review' },
+  { id: 'INQ-8802', type: 'INQ', name: 'Vincent Ho', msg: 'Confirming HydroShift 360 top clearance on Fractal North XL', date: '2026-11-14', status: 'Resolved' }
+];
+
+function loadTickets() {
+  let cur = [];
+  try { cur = JSON.parse(localStorage.getItem('forgeTickets') || '[]'); } catch (e) { cur = []; }
+  if (!Array.isArray(cur)) cur = [];
+  const seededFlag = localStorage.getItem('forgeTicketsSeeded');
+  if (!seededFlag) {
+    const have = new Set(cur.map(t => t.id));
+    DEFAULT_TICKETS.forEach(s => { if (!have.has(s.id)) cur.push({ ...s }); });
+    localStorage.setItem('forgeTicketsSeeded', '1');
+  }
+  cur = cur.map(t => ({ ...t, status: t.status || 'Open' }));
+  localStorage.setItem('forgeTickets', JSON.stringify(cur));
+  return cur;
+}
+
+function saveTickets(list) {
+  localStorage.setItem('forgeTickets', JSON.stringify(list));
+}
+
+function loadStockMap() {
+  let map = {};
+  try { map = JSON.parse(localStorage.getItem('forgeStock') || '{}'); } catch (e) { map = {}; }
+  if (!map || typeof map !== 'object') map = {};
+  let changed = false;
+  PARTS.forEach((p, i) => {
+    if (typeof map[p.id] !== 'number' || !Number.isFinite(map[p.id])) {
+      map[p.id] = (i * 37 + 11) % 60;
+      changed = true;
+    }
+  });
+  if (changed) localStorage.setItem('forgeStock', JSON.stringify(map));
+  return map;
+}
+
+function saveStockMap(map) {
+  localStorage.setItem('forgeStock', JSON.stringify(map));
+}
+
+/* Compute dynamic KPIs before DOMContentLoaded initCounters() runs */
+function refreshKPIs(animateRevenue) {
+  const orders = loadOrders();
+  const tickets = loadTickets();
+  const liveDelta = orders
+    .filter(o => !SEED_IDS.has(o.id))
+    .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const revTotal = BASE_REVENUE + liveDelta;
+  const revEl = $('#kpiRev');
+  revEl.dataset.count = String(revTotal);
+  if (!animateRevenue) revEl.textContent = money(revTotal);
+  $('#kpiRevDelta').textContent = liveDelta > 0 ? `+${money(liveDelta)} new session orders` : 'Baseline $248,600';
+
+  const activeQueue = orders.filter(o => (Number(o.stage) || 1) < 5).length;
+  $('#kpiQueue').textContent = String(activeQueue);
+
+  const openCount = tickets.filter(t => t.status !== 'Resolved').length;
+  $('#tk').textContent = String(openCount);
+}
+
+/* Tab switching */
+function switchStaffTab(tabName) {
+  $$('#staffTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tabName));
+  $$('.tpane').forEach(p => p.classList.toggle('on', p.id === 'tab-' + tabName));
+  if (typeof sfx === 'function') sfx();
+}
+window.switchStaffTab = switchStaffTab;
+$$('#staffTabs button').forEach(b => b.onclick = () => switchStaffTab(b.dataset.tab));
+
+/* Tab 1: 7-Day Chart & Burn-In Rack Monitor & Recent Tickets */
+const W = [['Mon', 42], ['Tue', 58], ['Wed', 51], ['Thu', 73], ['Fri', 88], ['Sat', 100], ['Sun', 66]];
+$('#chart').innerHTML = W.map(([d, v]) => `
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px">
+    <span style="font-family:var(--mono);font-size:.72rem;color:var(--txt);font-variant-numeric:tabular-nums">${v}</span>
+    <div title="${v} orders" style="width:100%;height:${Math.round(v * 1.4)}px;background:linear-gradient(180deg, var(--pri), #27272A);border-radius:6px 6px 0 0;transition:opacity .2s" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'"></div>
+    <small class="mut" style="font-family:var(--mono);font-size:.72rem">${d}</small>
+  </div>
+`).join('');
+
+function renderRack() {
+  const orders = loadOrders();
+  const bays = [
+    { bay: 'BAY-01', order: orders[0] || FALLBACK_ORDERS[0], cpu: '61°C', gpu: '58°C', pct: 86, state: 'OCCT 20.6h / 24h' },
+    { bay: 'BAY-02', order: orders[1] || FALLBACK_ORDERS[1], cpu: '54°C', gpu: '55°C', pct: 100, state: 'Passed · Signed Off' },
+    { bay: 'BAY-03', order: orders[2] || FALLBACK_ORDERS[2], cpu: '59°C', gpu: '56°C', pct: 64, state: 'OCCT 15.4h / 24h' },
+    { bay: 'BAY-04', order: orders[3] || { id: 'FG-8190', items: 'Core Ultra 7 265K · RTX 5070 · RM850e' }, cpu: '49°C', gpu: '51°C', pct: 38, state: 'Loop Flush & EXPO' }
+  ];
+  $('#burnInRack').innerHTML = bays.map(b => {
+    const ok = b.pct >= 100;
+    const hw = String(b.order.items || 'Custom Rig').slice(0, 46);
+    return `<div style="background:#121212;border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="tag">${b.bay}</span>
+          <a href="order-detail.html?id=${encodeURIComponent(b.order.id)}" style="font-family:var(--mono);font-size:.82rem;font-weight:600;text-decoration:underline;text-underline-offset:3px">${esc(b.order.id)}</a>
+        </div>
+        <span class="status ${ok ? 's-ok' : 's-w'}">${esc(b.state)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;font-size:.78rem">
+        <span class="mut">${esc(hw)}</span>
+        <span style="font-family:var(--mono);color:var(--txt);white-space:nowrap">CPU ${b.cpu} · GPU ${b.gpu}</span>
+      </div>
+      <div class="meter" style="margin-top:6px"><i style="width:${b.pct}%;background:${ok ? 'var(--ok)' : 'var(--pri)'}"></i></div>
+    </div>`;
+  }).join('');
+}
+
+function renderOverviewTickets() {
+  const T = loadTickets();
+  $('#tl').innerHTML = T.slice(0, 6).map(t => {
+    const st = t.status || 'Open';
+    const cls = st === 'Resolved' ? 's-ok' : st === 'In Review' ? 's-w' : 's-b';
+    return `<tr>
+      <td style="font-family:var(--mono)">${esc(t.id)}</td>
+      <td><span class="tag">${esc(t.type || 'INQ')}</span></td>
+      <td>${esc(t.name)}</td>
+      <td>${esc(t.msg)}</td>
+      <td><span class="status ${cls}">${esc(st)}</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" class="mut">No support tickets logged.</td></tr>';
+}
+
+/* Tab 2: Orders & Fulfillment */
+let ordStageFilter = 'all';
+function stageBadgeClass(stage) {
+  const n = Number(stage) || 1;
+  if (n >= 5) return 's-ok';
+  if (n >= 2) return 's-w';
+  return '';
+}
+
+function renderOrders() {
+  const orders = loadOrders();
+  const q = ($('#ordQ').value || '').trim().toLowerCase();
+  const filtered = orders.filter(o => {
+    const st = Number(o.stage) || 1;
+    const matchStage = ordStageFilter === 'all' || String(st) === ordStageFilter;
+    const hay = `${o.id} ${o.customer || o.name || ''} ${o.items || ''}`.toLowerCase();
+    return matchStage && (!q || hay.includes(q));
+  });
+  $('#ordCount').textContent = `${filtered.length} / ${orders.length} orders`;
+  $('#ordTbl').innerHTML = filtered.map(o => {
+    const stage = Math.min(5, Math.max(1, Number(o.stage) || 1));
+    const cust = o.customer || o.name || 'HK Client';
+    const rawItems = String(o.items || 'Custom Order');
+    const shortItems = rawItems.length > 52 ? rawItems.slice(0, 52) + '…' : rawItems;
+    const opts = [1, 2, 3, 4, 5].map(n => `<option value="${n}"${n === stage ? ' selected' : ''}>${STAGE_LABELS[n]}</option>`).join('');
+    return `<tr>
+      <td style="font-family:var(--mono);white-space:nowrap"><b>${esc(o.id)}</b>${o.tamperBlocked ? '<div style="margin-top:4px"><span class="status s-b">Tamper Guarded</span></div>' : ''}</td>
+      <td style="font-family:var(--mono);white-space:nowrap">${esc(o.date || '—')}</td>
+      <td>${esc(cust)}</td>
+      <td style="font-size:.85rem">${esc(shortItems)}</td>
+      <td class="price">${money(o.total || 0)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <select class="stage-sel" data-oid="${esc(o.id)}" aria-label="Update stage for ${esc(o.id)}" style="background:#121212;color:var(--txt);border:1px solid var(--line-hi);border-radius:6px;padding:6px 10px;font:inherit;font-size:.8rem;cursor:pointer">${opts}</select>
+          <span class="status ${stageBadgeClass(stage)}">${esc(STAGES[stage])}</span>
+        </div>
+      </td>
+      <td><a class="btn sm subtle" href="order-detail.html?id=${encodeURIComponent(o.id)}">Inspect →</a></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="mut center">No matching orders found.</td></tr>';
+}
+
+$$('#ordStageChips button').forEach(b => b.onclick = () => {
+  $$('#ordStageChips button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  ordStageFilter = b.dataset.stage;
+  renderOrders();
+});
+$('#ordQ').oninput = renderOrders;
+$('#ordTbl').addEventListener('change', e => {
+  const sel = e.target.closest('.stage-sel');
+  if (!sel) return;
+  const oid = sel.dataset.oid;
+  const nextStage = Math.min(5, Math.max(1, Number(sel.value) || 1));
+  const orders = loadOrders();
+  const target = orders.find(o => o.id === oid);
+  if (!target) return;
+  target.stage = nextStage;
+  target.status = STAGES[nextStage];
+  saveOrders(orders);
+  renderOrders();
+  renderRack();
+  refreshKPIs(false);
+  if (typeof sfx === 'function') sfx('install');
+  toast(`Order ${oid} updated to ${STAGES[nextStage]}`);
+});
+
+/* Tab 3: Inventory & Pricing (53 SKUs) */
+let invStatusFilter = 'all';
+$('#invCat').innerHTML = `<option value="all">All Categories (${PARTS.length})</option>` +
+  Object.entries(CATS).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+
+function renderInv() {
+  const map = loadStockMap();
+  const cat = $('#invCat').value;
+  const q = ($('#invQ').value || '').trim().toLowerCase();
+  const rows = PARTS.filter(p => {
+    const stock = map[p.id];
+    const matchCat = cat === 'all' || p.cat === cat;
+    const matchSt = invStatusFilter === 'all' || (invStatusFilter === 'low' ? (stock >= 10 && stock < 25) : stock < 10);
+    const matchQ = !q || p.name.toLowerCase().includes(q) || CATS[p.cat].toLowerCase().includes(q) || p.id.toLowerCase().includes(q);
+    return matchCat && matchSt && matchQ;
+  });
+  $('#invCount').textContent = `${rows.length} / ${PARTS.length} items`;
+  $('#inv').innerHTML = rows.map(p => {
+    const stock = map[p.id];
+    const cls = stock < 10 ? 's-b' : stock < 25 ? 's-w' : 's-ok';
+    const lbl = stock < 10 ? 'Reorder' : stock < 25 ? 'Low' : 'OK';
+    return `<tr>
+      <td style="font-family:var(--mono)">${esc(p.id.toUpperCase())}</td>
+      <td><b>${esc(p.name)}</b></td>
+      <td>${esc(CATS[p.cat])}</td>
+      <td style="font-family:var(--mono)">${money(p.price)}</td>
+      <td style="font-family:var(--mono);font-weight:600">${stock}</td>
+      <td><span class="status ${cls}">${lbl}</span></td>
+      <td>
+        <div style="display:inline-flex;gap:6px;flex-wrap:nowrap">
+          <button type="button" class="btn sm subtle" data-sku="${esc(p.id)}" data-delta="-1" aria-label="Decrease ${esc(p.name)} stock">-1</button>
+          <button type="button" class="btn sm subtle" data-sku="${esc(p.id)}" data-delta="1" aria-label="Increase ${esc(p.name)} stock">+1</button>
+          <button type="button" class="btn sm" data-sku="${esc(p.id)}" data-delta="10">+10 Restock</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" class="mut center">No matching components found.</td></tr>';
+}
+
+$('#invCat').onchange = renderInv;
+$('#invQ').oninput = renderInv;
+$$('#invStatusChips button').forEach(b => b.onclick = () => {
+  $$('#invStatusChips button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  invStatusFilter = b.dataset.st;
+  renderInv();
+});
+$('#inv').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-sku]');
+  if (!btn) return;
+  const sku = btn.dataset.sku;
+  const delta = Number(btn.dataset.delta) || 0;
+  const map = loadStockMap();
+  map[sku] = Math.max(0, (map[sku] || 0) + delta);
+  saveStockMap(map);
+  renderInv();
+  if (typeof sfx === 'function') sfx('install');
+  const part = byId(sku);
+  toast(`${part ? part.name : sku.toUpperCase()} stock: ${map[sku]}`);
+});
+
+/* Tab 4: Support & Reviews */
+function renderSupportTab() {
+  const T = loadTickets();
+  $('#supCount').textContent = `${T.length} total tickets`;
+  $('#supTbl').innerHTML = T.map(t => {
+    const st = t.status || 'Open';
+    const cls = st === 'Resolved' ? 's-ok' : st === 'In Review' ? 's-w' : 's-b';
+    const opts = ['Open', 'In Review', 'Resolved'].map(s => `<option value="${s}"${s === st ? ' selected' : ''}>${s}</option>`).join('');
+    return `<tr>
+      <td style="font-family:var(--mono)">${esc(t.id)}</td>
+      <td><span class="tag">${esc(t.type || 'INQ')}</span></td>
+      <td>${esc(t.name)}</td>
+      <td style="font-family:var(--mono);white-space:nowrap">${esc(t.date || '—')}</td>
+      <td style="font-size:.86rem">${esc(t.msg)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select class="tkt-sel" data-tid="${esc(t.id)}" aria-label="Status for ${esc(t.id)}" style="background:#121212;color:var(--txt);border:1px solid var(--line-hi);border-radius:6px;padding:6px 10px;font:inherit;font-size:.8rem;cursor:pointer">${opts}</select>
+          <span class="status ${cls}">${esc(st)}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="mut center">No tickets in queue.</td></tr>';
+
+  const SEED_REVIEWS = [
+    ['Kevin L.', 5, 'The 3D builder is insane. My PC looked exactly like the preview!', true],
+    ['Mei W.', 5, 'Delivered in 4 days, perfect cable management.', true],
+    ['Jason T.', 4, 'Great price, staff were very patient with my questions.', true]
+  ];
+  let userComments = [];
+  try { userComments = JSON.parse(localStorage.getItem('forgeComments') || '[]'); } catch (e) { userComments = []; }
+  let modMap = {};
+  try { modMap = JSON.parse(localStorage.getItem('forgeCommentMod') || '{}'); } catch (e) { modMap = {}; }
+
+  const rows = [
+    ...userComments.map((c, idx) => ({ name: c[0], rating: Number(c[1]) || 5, msg: c[2], seed: false, idx })),
+    ...SEED_REVIEWS.map((c, idx) => ({ name: c[0], rating: c[1], msg: c[2], seed: true, idx }))
+  ];
+  $('#revList').innerHTML = rows.map(r => {
+    const key = (r.seed ? 'seed:' : 'user:') + r.name + ':' + String(r.msg).slice(0, 20);
+    const modState = modMap[key] || 'Approved';
+    const stars = '★'.repeat(Math.max(1, Math.min(5, r.rating))) + '☆'.repeat(Math.max(0, 5 - Math.min(5, r.rating)));
+    return `<div style="background:#121212;border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <b>${esc(r.name)}</b>
+          <span style="color:var(--pri);font-size:.82rem;letter-spacing:.05em">${stars}</span>
+          <span class="tag">${r.seed ? 'Verified Archive' : 'Customer Post'}</span>
+          <span class="status ${modState === 'Hidden' ? 's-b' : 's-ok'}">${esc(modState)}</span>
+        </div>
+        <p class="mut" style="font-size:.86rem;margin-top:4px">${esc(r.msg)}</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn sm subtle" data-mod-key="${esc(key)}">${modState === 'Hidden' ? 'Restore' : 'Hide'}</button>
+        ${r.seed ? '' : `<button type="button" class="btn sm subtle" style="color:var(--danger);border-color:rgba(239,68,68,.35)" data-del-idx="${r.idx}">Remove</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('#supTbl').addEventListener('change', e => {
+  const sel = e.target.closest('.tkt-sel');
+  if (!sel) return;
+  const tid = sel.dataset.tid;
+  const list = loadTickets();
+  const item = list.find(t => t.id === tid);
+  if (!item) return;
+  item.status = sel.value;
+  saveTickets(list);
+  renderSupportTab();
+  renderOverviewTickets();
+  refreshKPIs(false);
+  if (typeof sfx === 'function') sfx('install');
+  toast(`Ticket ${tid} marked ${sel.value}`);
+});
+
+$('#revList').addEventListener('click', e => {
+  const modBtn = e.target.closest('button[data-mod-key]');
+  if (modBtn) {
+    const key = modBtn.dataset.modKey;
+    let modMap = {};
+    try { modMap = JSON.parse(localStorage.getItem('forgeCommentMod') || '{}'); } catch (err) { modMap = {}; }
+    modMap[key] = modMap[key] === 'Hidden' ? 'Approved' : 'Hidden';
+    localStorage.setItem('forgeCommentMod', JSON.stringify(modMap));
+    renderSupportTab();
+    toast(`Comment visibility set to ${modMap[key]}`);
+    return;
+  }
+  const delBtn = e.target.closest('button[data-del-idx]');
+  if (delBtn) {
+    const idx = Number(delBtn.dataset.delIdx);
+    let cur = [];
+    try { cur = JSON.parse(localStorage.getItem('forgeComments') || '[]'); } catch (err) { cur = []; }
+    if (idx >= 0 && idx < cur.length) {
+      cur.splice(idx, 1);
+      localStorage.setItem('forgeComments', JSON.stringify(cur));
+      renderSupportTab();
+      toast('Comment removed from wall');
+    }
+  }
+});
+
+refreshKPIs(true);
+renderRack();
+renderOverviewTickets();
+renderOrders();
 renderInv();
-$('#invQ').oninput=e=>renderInv(e.target.value);</script>
+renderSupportTab();
+</script>
 </body>
 </html>

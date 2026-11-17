@@ -322,16 +322,45 @@ $('#bSave').onclick = () => {
   sfx('install');
   toast('Build saved to your Member Dashboard');
 };
-$('#bBuy').onclick = () => {
+function validateReadyBuild() {
   const miss = ORDER.filter(c => c !== 'acc' && !sel[c]);
   if (miss.length) {
     sfx('warn');
-    return toast('Please choose: ' + miss.map(c => CATS[c]).join(', '));
+    toast('Please choose: ' + miss.map(c => CATS[c]).join(', '));
+    return false;
   }
   if (sel.psu.cap < totalWatt() * 0.9) {
     sfx('warn');
-    return toast('Your PSU wattage is too low for this build');
+    toast('Your PSU wattage is too low for this build');
+    return false;
   }
+  return true;
+}
+
+const bAddCartBtn = $('#bAddCart');
+if (bAddCartBtn) {
+  bAddCartBtn.onclick = () => {
+    if (!validateReadyBuild() || typeof forgeCart === 'undefined') return;
+    const p = pack();
+    const cpuShort = sel.cpu ? sel.cpu.name.replace('Intel Core ', '').replace('AMD ', '') : 'Custom CPU';
+    const gpuShort = sel.gpu ? sel.gpu.name.replace('NVIDIA GeForce ', '').replace('AMD Radeon ', '') : 'Custom GPU';
+    const caseName = sel.case ? sel.case.name : 'Custom Chassis';
+    forgeCart.addToCart({
+      type: 'build',
+      id: 'custom-' + Date.now().toString(36),
+      name: `Custom 3D Build (${cpuShort} · ${gpuShort})`,
+      spec: `${p.items.length} parts · ${caseName} · +$99 Lab Assembly`,
+      price: p.total,
+      qty: 1,
+      asm: 99,
+      img: p.img || 'img/renders/hero_rig_studio.png',
+      items: p.items
+    });
+  };
+}
+
+$('#bBuy').onclick = () => {
+  if (!validateReadyBuild()) return;
   pc.resetView();
   setTimeout(() => {
     localStorage.setItem('forgeOrder', JSON.stringify(pack()));
@@ -346,7 +375,18 @@ addEventListener('keydown', e => {
 });
 
 const q = qs();
-if (q.kit) loadKit(q.kit);
+if (q.edit === '1') {
+  let customIds = null;
+  try { customIds = JSON.parse(localStorage.getItem('forgeEditBuild') || 'null'); } catch (e) {}
+  if (Array.isArray(customIds) && customIds.length) {
+    ORDER.forEach(c => { delete sel[c]; pc.set(c, null); });
+    customIds.forEach(pid => pick(byId(pid), true));
+    render();
+    toast('Custom build loaded from shopping bag');
+  } else {
+    loadKit('pb2');
+  }
+} else if (q.kit) loadKit(q.kit);
 else if (q.add) {
   pick(byId('x1'), true);
   pick(byId(q.add), true);

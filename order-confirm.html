@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Order Confirmation | FORGE</title>
-<meta name="description" content="Review the products or services you are purchasing from FORGE.">
+<meta name="description" content="Review the products, custom 3D builds, shopping bag items, or services you are purchasing from FORGE.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
-<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / Order Confirmation</p><h1>Confirm Your <span class="grad">Order</span></h1><p>Review your selected hardware, custom 3D configuration, or booked engineering service before checkout.</p></div></section>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="cart.html">Shopping Bag</a> / Order Confirmation</p><h1>Confirm Your <span class="grad">Order</span></h1><p>Review your selected hardware, custom 3D configuration, shopping bag, or booked engineering service before checkout.</p></div></section>
 <section style="padding-top:28px"><div class="wrap g2" style="align-items:start">
  <div><div id="img"></div><div class="tblwrap"><table><thead><tr><th>Item / Service</th><th>Qty</th><th>Price</th></tr></thead><tbody id="items"></tbody></table></div></div>
  <div class="card"><h3>Order Summary</h3>
@@ -19,12 +19,13 @@
    <tr><td><b>Total Payable (USD)</b></td><td class="price" id="tot" style="text-align:right"></td></tr>
   </tbody></table>
   <form id="co" action="checkout-success.html" method="get" style="margin-top:20px;display:grid;gap:14px" novalidate>
-   <input type="hidden" name="total" id="ht"><input type="hidden" name="items" id="hi"><input type="hidden" name="spec" id="hspec">
+   <input type="hidden" name="total" id="ht"><input type="hidden" name="items" id="hi"><input type="hidden" name="spec" id="hspec"><input type="hidden" name="src" id="hsrc"><input type="hidden" name="promo" id="hpromo">
    <div class="field"><label for="n">Full Name</label><input id="n" name="name" placeholder="e.g. Alex Chan" data-rule="req"><div class="err"></div></div>
+   <div class="field"><label for="deliv">Delivery Method</label><select id="deliv" name="delivery"><option value="SF Express Insured 5-Day Courier">SF Express Insured 5-Day Courier (Free)</option><option value="Mong Kok Sino Centre Showroom Pickup">Mong Kok Sino Centre Showroom Pickup (Ready in 4 Days)</option></select></div>
    <div class="field"><label for="a">Delivery / On-Site Service Address</label><input id="a" name="address" placeholder="Unit, Building, Street, District, Hong Kong" data-rule="req"><div class="err"></div></div>
    <div class="field"><label for="pay">Payment Method</label><select id="pay" name="pay"><option>Visa / Mastercard</option><option>FPS (Faster Payment System)</option><option>PayMe by HSBC</option><option>Octopus</option></select></div>
    <button class="btn solid" style="width:100%;justify-content:center">Confirm &amp; Place Order →</button>
-  </form><p class="mut center" style="font-size:.8rem;margin-top:12px">Academic demonstration — no real payment is processed.</p></div>
+  </form><p class="mut center" style="font-size:.8rem;margin-top:12px">Catalog-verified checkout · 3-Year On-Site HK Warranty.</p></div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
@@ -33,7 +34,31 @@
 const q = qs();
 let rows = [], img = '', asm = 0, spec = '';
 
-if (q.service) {
+if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
+  const cart = forgeCart.getCart();
+  const tokens = [];
+  cart.forEach(it => {
+    const qty = Math.max(1, Number(it.qty) || 1);
+    const linePrice = (Number(it.price) || 0) * qty;
+    rows.push([it.name, qty, linePrice]);
+    asm += (Number(it.asm) || 0) * qty;
+    if (it.type === 'kit' && it.id) tokens.push(`k:${it.id}:${qty}`);
+    else if (it.type === 'part' && it.id) tokens.push(`p:${it.id}:${qty}`);
+    else if (it.type === 'service') tokens.push(`s:${Math.max(0, Number(it.price) || 0)}:${qty}`);
+    else if (it.type === 'build' && Array.isArray(it.items) && it.items.length) tokens.push(`b:${it.items.join('+')}:${qty}`);
+  });
+  spec = tokens.length ? `cart:${tokens.join('|')}` : '';
+  const buildItem = cart.find(it => it.type === 'build' && it.img && it.img.startsWith('data:'));
+  if (buildItem) {
+    img = buildItem.img;
+  } else if (cart.length) {
+    const thumbs = cart.slice(0, 4).map(it => `
+      <div class="pimg" style="height:130px;margin:0;padding:10px;display:flex;align-items:center;justify-content:center">
+        <img src="${esc(it.img)}" style="width:100%;height:100%;object-fit:contain" alt="${esc(it.name)}">
+      </div>`).join('');
+    $('#img').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">${thumbs}</div>`;
+  }
+} else if (q.service) {
   const sPrice = Math.max(0, +q.price || 49);
   const sQty = Math.max(1, +q.qty || 1);
   rows = [[q.service + ' (FORGE Certified Service)', sQty, sPrice * sQty]];
@@ -74,22 +99,43 @@ if (q.service) {
 if (!rows.length) {
   $('#items').innerHTML = '<tr><td colspan="3">Your order list is empty. <a href="products.html">Browse Components</a> or <a href="services.html">Book a Service</a>.</td></tr>';
 } else {
-  $('#items').innerHTML = rows.map(r => `<tr><td><b>${esc(r[0])}</b></td><td>${r[1]}</td><td class="price">${money(r[2])}</td></tr>`).join('');
+  $('#items').innerHTML = rows.map(r => `<tr><td><b>${esc(r[0])}</b></td><td style="font-family:var(--mono)">${r[1]}</td><td class="price">${money(r[2])}</td></tr>`).join('');
 }
 
 if (img) {
   $('#img').innerHTML = `<img src="${img}" alt="Your custom 3D PC build" style="border-radius:12px;border:1px solid var(--line);margin-bottom:16px;background:#111111;width:100%">`;
 }
 
-const sub = rows.reduce((s, r) => s + r[2], 0), u = user(), disc = u ? Math.round(sub * 0.05) : 0, tot = sub + asm - disc;
+const sub = rows.reduce((s, r) => s + r[2], 0);
+const u = user();
+const promoCode = String(q.promo || '').trim().toUpperCase();
+const hasForge5 = promoCode === 'FORGE5';
+const disc = (u || hasForge5) ? Math.round(sub * 0.05) : 0;
+const tot = sub + asm - disc;
+
 $('#sub').textContent = money(sub);
 $('#asm').textContent = money(asm);
 $('#disc').textContent = '-' + money(disc);
-if (!u) $('#dl').innerHTML = 'Member discount (<a href="login.html">log in for 5% off</a>)';
+if (u && hasForge5) $('#dl').textContent = 'Member & FORGE5 discount (5%)';
+else if (hasForge5) $('#dl').textContent = 'Promo code FORGE5 (5% off)';
+else if (!u) $('#dl').innerHTML = 'Member discount (<a href="login.html">log in for 5% off</a>)';
+
 $('#tot').textContent = money(tot);
 $('#ht').value = tot;
 $('#hi').value = rows.map(r => r[0]).join('; ');
 $('#hspec').value = spec;
+$('#hsrc').value = q.src || (q.service ? 'service' : (q.id ? 'catalog' : 'builder'));
+$('#hpromo').value = hasForge5 ? 'FORGE5' : '';
+
+if (q.delivery === 'pickup') {
+  $('#deliv').value = 'Mong Kok Sino Centre Showroom Pickup';
+  $('#a').value = 'Self-Pickup · Shop 12, 3/F, Sino Centre, 582 Nathan Road, Mong Kok';
+}
+$('#deliv').onchange = () => {
+  if ($('#deliv').value.includes('Showroom') && !$('#a').value.trim()) {
+    $('#a').value = 'Self-Pickup · Shop 12, 3/F, Sino Centre, 582 Nathan Road, Mong Kok';
+  }
+};
 if (u) $('#n').value = u.name;
 $('#co').onsubmit = e => { if (!rows.length || !validate(e.target)) e.preventDefault(); };
 </script>

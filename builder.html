@@ -59,7 +59,7 @@
           <small class="mut" style="display:block;font-size:.72rem;font-family:var(--mono);margin-top:8px">Chassis finish</small>
           <div class="swatches" id="caseSw"></div>
         </div>
-        <div class="panel" style="min-width:280px;max-width:100%">
+        <div class="panel" style="min-width:316px;max-width:100%">
           <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut" style="font-size:.84rem">Total</span><b class="price" id="tot">$0</b></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin-top:6px"><span class="mut">Power <b id="watt" style="color:var(--txt)">0W</b></span><div class="bar"><i id="wattBar"></i></div></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin:4px 0"><span class="mut">3DMark</span><div class="bar"><i id="perfBar"></i></div></div>
@@ -73,9 +73,10 @@
             <div class="fps-row"><span>Valorant</span><b id="fps3">— FPS</b></div>
           </div>
           <div class="warnbox" id="warn"></div>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn sm" id="bSave">Save</button>
-            <button class="btn sm solid" id="bBuy" style="flex:1">Review Order</button>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <button class="btn sm" id="bSave" type="button">Save</button>
+            <button class="btn sm" id="bAddCart" type="button">Add to Bag</button>
+            <button class="btn sm solid" id="bBuy" type="button" style="flex:1;white-space:nowrap">Review Order</button>
           </div>
         </div>
       </div>

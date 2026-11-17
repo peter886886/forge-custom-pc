@@ -23,8 +23,10 @@
 <script src="js/main.js"></script>
 <script>const seed=[['Kevin L.',5,'The 3D builder is insane. My PC looked exactly like the preview!'],['Mei W.',5,'Delivered in 4 days, perfect cable management.'],['Jason T.',4,'Great price, staff were very patient with my questions.']];
 const C=JSON.parse(localStorage.getItem('forgeComments')||'[]');
+let modMap={};try{modMap=JSON.parse(localStorage.getItem('forgeCommentMod')||'{}')}catch(e){modMap={}}
+function isHiddenComment(c,isSeed){const k=(isSeed?'seed:':'user:')+c[0]+':'+String(c[2]||'').slice(0,20);return modMap[k]==='Hidden'}
 function card([n,r,m]){const d=document.createElement('div');d.className='card';d.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b></b><span style="color:var(--pri);letter-spacing:.06em"></span></div><p class="mut" style="font-size:.92rem"></p>';d.querySelector('b').textContent=n;d.querySelector('span').textContent='★'.repeat(r)+'☆'.repeat(5-r);d.querySelector('p').textContent=m;return d}
-[...C,...seed].forEach(c=>$('#wall').append(card(c)));
+[...C.filter(c=>!isHiddenComment(c,false)),...seed.filter(c=>!isHiddenComment(c,true))].forEach(c=>$('#wall').append(card(c)));
 const f=$('#f');liveValidate(f);f.onsubmit=e=>{e.preventDefault();if(!validate(f))return;const r=+(f.r.value||5),c=[f.name.value,r,f.msg.value];C.unshift(c);localStorage.setItem('forgeComments',JSON.stringify(C.slice(0,10)));$('#wall').prepend(card(c));f.reset();toast('Thanks for your comment!')};</script>
 </body>
 </html>

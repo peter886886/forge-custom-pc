@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shopping Bag | FORGE</title>
+<meta name="description" content="Review your FORGE components, prebuilt systems, custom 3D PC builds, delivery options, and promo codes before checkout.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<main>
+<section class="phero">
+  <div class="wrap" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px">
+    <div>
+      <p class="crumb"><a href="index.html">Home</a> / <a href="products.html">Shop</a> / Shopping Bag</p>
+      <h1>Shopping <span class="grad">Bag</span></h1>
+      <p>Review selected components, custom 3D configurations, and engineering services before order confirmation.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="telemetry-pill" id="bagCountPill">0 item(s)</span>
+      <button class="btn sm subtle" id="clearBagBtn" type="button" style="display:none">Clear Bag</button>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:28px">
+  <div class="wrap cart-layout">
+    <!-- Left Column: Bag Items & Recommended Add-Ons -->
+    <div style="display:grid;gap:28px">
+      <div id="cartItems" style="display:grid;gap:14px"></div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div>
+            <p class="eyebrow" style="margin-bottom:4px">Lab Tested Upgrades</p>
+            <h2 style="font-size:1.35rem;margin:0">Recommended Build Add-Ons</h2>
+          </div>
+          <a class="btn sm subtle" href="products.html?cat=acc">All 10 Accessories →</a>
+        </div>
+        <div class="grid cart-addons-grid" id="cartAddons" style="grid-template-columns:repeat(2,1fr);gap:14px"></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Sticky Order Summary -->
+    <aside class="card cart-summary" aria-label="Order summary">
+      <h3 style="margin-bottom:14px">Order Summary</h3>
+
+      <div style="display:grid;gap:8px;margin-bottom:16px">
+        <span style="font-size:.82rem;font-weight:500;color:var(--txt)">Delivery Method</span>
+        <label class="delivery-opt on" id="optCourier">
+          <input type="radio" name="delivery" value="courier" checked>
+          <span style="display:grid;gap:2px">
+            <b style="font-size:.86rem">SF Express Insured 5-Day Courier — Free</b>
+            <small class="mut" style="font-size:.76rem">Expanding-foam internal GPU bracing · HK-wide delivery</small>
+          </span>
+        </label>
+        <label class="delivery-opt" id="optPickup">
+          <input type="radio" name="delivery" value="pickup">
+          <span style="display:grid;gap:2px">
+            <b style="font-size:.86rem">Mong Kok Sino Centre Showroom Pickup</b>
+            <small class="mut" style="font-size:.76rem">Ready in 4 days · Shop 12, 3/F, 582 Nathan Road</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label for="promoIn">Promo Code</label>
+        <div style="display:flex;gap:8px">
+          <input id="promoIn" placeholder="Enter FORGE5 for 5% off" autocomplete="off" style="flex:1;text-transform:uppercase">
+          <button class="btn sm" id="promoBtn" type="button">Apply</button>
+        </div>
+        <div id="promoStatus" class="mut" style="font-size:.76rem;margin-top:6px;min-height:18px"></div>
+      </div>
+
+      <div id="memberNotice" style="margin-bottom:16px"></div>
+
+      <div style="display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:.88rem">
+        <div style="display:flex;justify-content:space-between"><span class="mut">Subtotal</span><span id="sumSub" style="font-family:var(--mono);font-variant-numeric:tabular-nums">$0</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="mut">Lab Assembly &amp; 24h Burn-In</span><span id="sumAsm" style="font-family:var(--mono);font-variant-numeric:tabular-nums">$0</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="mut" id="sumDiscLabel">Discount (5%)</span><span id="sumDisc" style="font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ok)">-$0</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px solid var(--line)">
+          <b>Estimated Total (USD)</b>
+          <b class="price" id="sumTot" style="font-size:1.35rem">$0</b>
+        </div>
+      </div>
+
+      <a class="btn solid" id="proceedBtn" href="order-confirm.html?src=cart" style="width:100%;justify-content:center;margin-top:16px">Proceed to Order Review →</a>
+
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);text-align:center">
+        <p class="mut" style="font-family:var(--mono);font-size:.7rem;letter-spacing:.03em">Visa · Mastercard · FPS · PayMe · Octopus</p>
+        <p class="mut" style="font-size:.74rem;margin-top:4px">3-Year On-Site Hong Kong Warranty Included</p>
+      </div>
+    </aside>
+  </div>
+</section>
+</main>
+
+<script src="js/data.js"></script>
+<script src="js/main.js"></script>
+<script>
+const ADDON_IDS = ['a1', 'a4', 'a6', 'a3'];
+let deliveryMode = 'courier';
+let appliedPromo = (qs().promo || '').trim().toUpperCase() === 'FORGE5' ? 'FORGE5' : '';
+if (appliedPromo) $('#promoIn').value = appliedPromo;
+
+function renderAddons() {
+  const addons = ADDON_IDS.map(id => byId(id)).filter(Boolean);
+  $('#cartAddons').innerHTML = addons.map(p => `
+    <div class="card" style="padding:14px;display:flex;flex-direction:column;gap:8px">
+      <a href="product-detail.html?id=${p.id}" class="pimg" style="height:124px;margin-bottom:4px;border-radius:8px">
+        <img class="main-photo has-alt" src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain;padding:10px" alt="${esc(p.name)}">
+        <img class="alt-photo" src="img/installed/${p.id}.png" style="width:100%;height:100%;object-fit:cover" alt="${esc(p.name)} Installed">
+      </a>
+      <span class="tag" style="align-self:flex-start;font-size:.64rem">${esc(CATS[p.cat])}</span>
+      <h4 style="font-size:.92rem;margin:0"><a href="product-detail.html?id=${p.id}">${esc(p.name)}</a></h4>
+      <p class="mut" style="font-size:.76rem;margin:0">${esc(p.spec)}</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:6px">
+        <b class="price" style="font-size:1rem">${money(p.price)}</b>
+        <button class="btn sm solid" type="button" data-addon="${p.id}">Add to Bag</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function itemHref(it) {
+  if (it.type === 'part' && it.id) return `product-detail.html?id=${encodeURIComponent(it.id)}`;
+  if (it.type === 'kit' && it.id) return `builder.html?kit=${encodeURIComponent(it.id)}`;
+  if (it.type === 'service') return 'services.html';
+  return 'builder.html';
+}
+
+function renderBagPage() {
+  const cart = forgeCart.getCart();
+  const totalQty = cart.reduce((s, x) => s + x.qty, 0);
+  $('#bagCountPill').textContent = `${totalQty} item(s)`;
+  $('#clearBagBtn').style.display = cart.length ? 'inline-flex' : 'none';
+
+  const typeLabel = { part: 'Component', kit: 'Prebuilt System', build: 'Custom 3D Build', service: 'Lab Service' };
+
+  if (!cart.length) {
+    $('#cartItems').innerHTML = `
+      <div class="card center" style="padding:48px 24px;display:grid;gap:14px;justify-items:center">
+        <div style="width:54px;height:54px;border-radius:14px;background:#1A1A1A;border:1px solid var(--line-hi);display:grid;place-items:center;color:var(--mut)">
+          <span style="width:22px;height:22px;display:inline-flex">${ICONS.bag}</span>
+        </div>
+        <div>
+          <h3 style="margin-bottom:6px">Your shopping bag is empty</h3>
+          <p class="mut" style="font-size:.9rem;max-width:44ch">Start from a prebuilt reference rig, configure your hardware in real-time 3D, or add individual components.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+          <a class="btn solid" href="builder.html">Open 3D Configurator</a>
+          <a class="btn" href="products.html">Browse 53 Components</a>
+        </div>
+      </div>`;
+  } else {
+    $('#cartItems').innerHTML = cart.map(it => {
+      const partLines = (it.type === 'build' && Array.isArray(it.items) && it.items.length)
+        ? `<details style="margin-top:10px;background:#121212;border:1px solid var(--line);border-radius:8px;padding:8px 12px">
+            <summary style="cursor:pointer;font-family:var(--mono);font-size:.74rem;color:var(--txt)">Inspect ${it.items.length} Selected Components</summary>
+            <ul style="margin:10px 0 6px 16px;display:grid;gap:4px;font-size:.8rem;color:var(--mut)">
+              ${it.items.map(pid => {
+                const p = byId(pid);
+                return p ? `<li>${esc(CATS[p.cat])}: <span style="color:var(--txt)">${esc(p.name)}</span> · <span style="font-family:var(--mono)">${money(p.price)}</span></li>` : '';
+              }).join('')}
+            </ul>
+            <button type="button" class="btn sm" data-edit-build="${esc(it.key)}" style="margin-top:6px">Edit in 3D Builder →</button>
+          </details>`
+        : '';
+
+      return `
+        <div class="card cart-card">
+          <img class="cart-thumb" src="${esc(it.img)}" alt="${esc(it.name)}">
+          <div style="min-width:0;display:grid;gap:6px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+              <div>
+                <span class="tag" style="margin-bottom:6px">${esc(typeLabel[it.type] || 'Item')}</span>
+                <h3 style="margin:0;font-size:1.05rem"><a href="${itemHref(it)}">${esc(it.name)}</a></h3>
+              </div>
+              <div style="text-align:right">
+                <b class="price" style="font-size:1.15rem">${money(it.price * it.qty)}</b>
+                ${it.asm > 0 ? `<div class="mut" style="font-family:var(--mono);font-size:.7rem">+${money(it.asm * it.qty)} lab assembly</div>` : ''}
+              </div>
+            </div>
+            <p class="mut" style="font-size:.84rem">${esc(it.spec || 'Verified FORGE hardware')}</p>
+            ${partLines}
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div class="qty-stepper">
+                  <button type="button" data-qty-dec="${esc(it.key)}" aria-label="Decrease quantity">${ICONS.minus}</button>
+                  <span>${it.qty}</span>
+                  <button type="button" data-qty-inc="${esc(it.key)}" aria-label="Increase quantity">${ICONS.plus}</button>
+                </div>
+                <span class="mut" style="font-family:var(--mono);font-size:.76rem">${money(it.price)} each</span>
+              </div>
+              <button type="button" class="drawer-rm" data-remove="${esc(it.key)}">${ICONS.trash}<span>Remove</span></button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  const u = user();
+  const sub = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const asm = cart.reduce((s, x) => s + x.asm * x.qty, 0);
+  const hasDiscount = !!(u || appliedPromo === 'FORGE5');
+  const disc = hasDiscount ? Math.round(sub * 0.05) : 0;
+  const tot = Math.max(0, sub + asm - disc);
+
+  $('#sumSub').textContent = money(sub);
+  $('#sumAsm').textContent = money(asm);
+  $('#sumDisc').textContent = '-' + money(disc);
+  $('#sumTot').textContent = money(tot);
+
+  if (u && appliedPromo === 'FORGE5') $('#sumDiscLabel').textContent = 'Member & FORGE5 (5% off)';
+  else if (appliedPromo === 'FORGE5') $('#sumDiscLabel').textContent = 'Promo FORGE5 (5% off)';
+  else if (u) $('#sumDiscLabel').textContent = 'Member discount (5%)';
+  else $('#sumDiscLabel').textContent = 'Discount (5%)';
+
+  if (u) {
+    $('#memberNotice').innerHTML = `<div class="status s-ok" style="display:block;padding:8px 10px;font-size:.74rem">Signed in as ${esc(u.name)} · 5% Member Discount Applied</div>`;
+  } else {
+    $('#memberNotice').innerHTML = `<div style="font-size:.78rem;color:var(--mut);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#121212"><a href="login.html" style="text-decoration:underline;text-underline-offset:3px">Sign in as a Member</a> for automatic 5% off, or apply code <b style="color:var(--txt);font-family:var(--mono)">FORGE5</b>.</div>`;
+  }
+
+  if (appliedPromo === 'FORGE5') {
+    $('#promoStatus').innerHTML = `<span style="color:var(--ok)">Promo code FORGE5 applied (5% off hardware &amp; kits).</span>`;
+  }
+
+  const params = new URLSearchParams({ src: 'cart', delivery: deliveryMode });
+  if (appliedPromo) params.set('promo', appliedPromo);
+  $('#proceedBtn').href = `order-confirm.html?${params.toString()}`;
+  $('#proceedBtn').style.opacity = cart.length ? '1' : '0.45';
+}
+
+$('#cartItems').addEventListener('click', e => {
+  const dec = e.target.closest('[data-qty-dec]');
+  const inc = e.target.closest('[data-qty-inc]');
+  const rm = e.target.closest('[data-remove]');
+  const edit = e.target.closest('[data-edit-build]');
+  if (dec) forgeCart.updateCartQty(dec.dataset.qtyDec, -1);
+  else if (inc) forgeCart.updateCartQty(inc.dataset.qtyInc, 1);
+  else if (rm) forgeCart.removeCartItem(rm.dataset.remove);
+  else if (edit) {
+    const it = forgeCart.getCart().find(x => x.key === edit.dataset.editBuild);
+    if (it && Array.isArray(it.items)) {
+      localStorage.setItem('forgeEditBuild', JSON.stringify(it.items));
+      location.href = 'builder.html?edit=1';
+    }
+  }
+});
+
+$('#cartAddons').addEventListener('click', e => {
+  const btn = e.target.closest('[data-addon]');
+  if (!btn) return;
+  const p = byId(btn.dataset.addon);
+  if (!p) return;
+  forgeCart.addToCart({
+    id: p.id,
+    type: 'part',
+    name: p.name,
+    spec: p.spec,
+    price: p.price,
+    qty: 1,
+    img: `img/products/${p.id}.png`
+  }, false);
+});
+
+$('#clearBagBtn').onclick = () => {
+  forgeCart.clearCart();
+  toast('Shopping bag cleared');
+};
+
+$$('input[name="delivery"]').forEach(r => {
+  r.onchange = () => {
+    deliveryMode = r.value;
+    $('#optCourier').classList.toggle('on', deliveryMode === 'courier');
+    $('#optPickup').classList.toggle('on', deliveryMode === 'pickup');
+    renderBagPage();
+  };
+});
+
+$('#promoBtn').onclick = () => {
+  const code = $('#promoIn').value.trim().toUpperCase();
+  if (!code) {
+    appliedPromo = '';
+    $('#promoStatus').textContent = 'Enter FORGE5 to apply a 5% promotional discount.';
+    renderBagPage();
+    return;
+  }
+  if (code === 'FORGE5') {
+    appliedPromo = 'FORGE5';
+    sfx('install');
+    toast('Promo code FORGE5 applied');
+    renderBagPage();
+  } else {
+    appliedPromo = '';
+    sfx('warn');
+    $('#promoStatus').innerHTML = `<span style="color:var(--danger)">Code "${esc(code)}" not recognized. Try FORGE5.</span>`;
+    renderBagPage();
+  }
+};
+
+$('#proceedBtn').onclick = e => {
+  if (!forgeCart.getCart().length) {
+    e.preventDefault();
+    sfx('warn');
+    toast('Add at least one item to your bag before checkout');
+  }
+};
+
+window.addEventListener('forge-cart', renderBagPage);
+renderAddons();
+renderBagPage();
+</script>
+</body>
+</html>

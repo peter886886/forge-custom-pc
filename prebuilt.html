@@ -42,15 +42,32 @@ $('#pb').innerHTML = PREBUILT.map(k => `
     <ul class="mut" style="margin:8px 0 18px 18px;font-size:.86rem;display:grid;gap:3px">
       ${k.parts.filter(i => byId(i) && byId(i).cat !== 'acc' && byId(i).cat !== 'case').map(i => '<li>' + byId(i).name + '</li>').join('')}
     </ul>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px;margin-bottom:10px">
       <span class="price">${money(kitPrice(k))}</span>
-      <div style="display:flex;gap:6px">
-        <a class="btn sm" href="builder.html?kit=${k.id}">Customize in 3D</a>
-        <a class="btn sm solid" href="order-confirm.html?id=${k.id}&qty=1">Buy</a>
-      </div>
+      <a class="mut" style="font-size:.8rem;text-decoration:underline;text-underline-offset:3px" href="builder.html?kit=${k.id}">Customize in 3D →</a>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn sm" type="button" style="justify-content:center" data-kit-bag="${k.id}">Add to Bag</button>
+      <a class="btn sm solid" style="justify-content:center" href="order-confirm.html?id=${k.id}&qty=1">Buy Now</a>
     </div>
   </div>
 `).join('');
+$('#pb').onclick = e => {
+  const btn = e.target.closest('[data-kit-bag]');
+  if (!btn || typeof forgeCart === 'undefined') return;
+  const k = byId(btn.dataset.kitBag);
+  if (!k) return;
+  forgeCart.addToCart({
+    id: k.id,
+    type: 'kit',
+    name: k.name,
+    spec: `${k.tag} · Includes $99 Lab Assembly`,
+    price: kitPrice(k),
+    qty: 1,
+    asm: 0,
+    img: PREBUILT_IMGS[k.id][0]
+  });
+};
 const rows=['cpu','gpu','ram','ssd','psu','cool','case','acc'];
 $('#cmp').innerHTML='<thead><tr><th>Component</th>'+PREBUILT.map(k=>`<th>${esc(k.name)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(c=>`<tr><td>${CATS[c]}</td>${PREBUILT.map(k=>{const list=k.parts.filter(i=>byId(i)?.cat===c).map(i=>esc(byId(i).name));return `<td>${list.length?list.join('<br>'):'—'}</td>`}).join('')}</tr>`).join('')+'<tr><td><b>Price (inc. $99 Assembly)</b></td>'+PREBUILT.map(k=>`<td class="price">${money(kitPrice(k))}</td>`).join('')+'</tr></tbody>';
 </script>

@@ -23,9 +23,10 @@
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>function saveTicket(type,f){const id=ticket(type);const t=JSON.parse(localStorage.getItem('forgeTickets')||'[]');t.unshift({id,type,name:f.name.value,msg:(f.msg||f.desc).value.slice(0,80),date:new Date().toLocaleDateString()});localStorage.setItem('forgeTickets',JSON.stringify(t.slice(0,20)));return id}
+<script>function saveTicket(type,f){const id=ticket(type);const t=JSON.parse(localStorage.getItem('forgeTickets')||'[]');t.unshift({id,type,name:f.name.value,msg:(f.msg||f.desc).value.slice(0,80),date:new Date().toLocaleDateString(),status:'Open'});localStorage.setItem('forgeTickets',JSON.stringify(t.slice(0,20)));return id}
 function done(f,id,msg){const c=document.createElement('div');c.className='card center';c.innerHTML='<div class="check"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2>Submitted</h2><p class="mut" style="margin:8px 0"></p><p>Your reference: <b style="font-family:var(--mono)"></b></p><div style="margin-top:20px"><a class="btn solid" href="index.html">Back to Home</a></div>';c.querySelector('p').textContent=msg;c.querySelector('b').textContent=id;f.replaceWith(c)}
 const f=$('#f');liveValidate(f);
+const qo=qs().order;if(qo&&$('#order'))$('#order').value=qo.trim();
 $('#file').onchange=e=>{const x=e.target.files[0];if(!x)return;if(!/^image\/(png|jpeg)$/.test(x.type)||x.size>2e6){toast('Only PNG/JPG under 2MB');e.target.value='';$('#prev').style.display='none';return}$('#prev').src=URL.createObjectURL(x);$('#prev').style.display='block'};
 f.onsubmit=e=>{e.preventDefault();if(!validate(f))return;done(f,saveTicket('CMP',f),'Your complaint has been logged. A manager will contact you within 48 hours.')};</script>
 </body>

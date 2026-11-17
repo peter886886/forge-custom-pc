@@ -3,33 +3,197 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Account | FORGE</title>
-<meta name="description" content="FORGE member dashboard.">
+<meta name="description" content="FORGE member dashboard — benefit tier, saved 3D builds, and live order tracking.">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
 <section><div class="wrap sidebar">
- <aside class="side card"><p class="eyebrow">Member</p><h3 id="nm" style="margin-bottom:14px"></h3><a class="on" href="#builds">Saved Builds</a><a href="#orders">Orders</a><a href="builder.html">New 3D Build</a><a href="#" id="out">Log Out</a></aside>
- <div><h2 id="builds">Saved <span class="grad">builds</span></h2><div class="grid" id="bl" style="margin-top:16px"></div>
-  <h2 id="orders" style="margin-top:40px">Order history</h2><div class="tblwrap" style="margin-top:14px"><table><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody id="ol"></tbody></table></div></div>
+ <aside class="side card">
+  <p class="eyebrow">Member Portal</p>
+  <h3 id="nm" style="margin-bottom:4px"></h3>
+  <p class="mut" id="em" style="font-size:.78rem;font-family:var(--mono);margin-bottom:14px"></p>
+  <a class="on" href="#benefits">Benefits &amp; Overview</a>
+  <a href="#builds">Saved Builds</a>
+  <a href="#orders">Orders &amp; Tracking</a>
+  <a href="builder.html">New 3D Build</a>
+  <a href="cart.html">Shopping Bag</a>
+  <a href="order-detail.html">Track Order</a>
+  <a href="#" id="out">Log Out</a>
+ </aside>
+ <div style="min-width:0">
+  <!-- Member Benefit Tier Card -->
+  <div class="card reveal" id="benefits" style="margin-bottom:28px;border-color:var(--line-hi)">
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
+    <div>
+     <span class="tag amber" style="margin-bottom:8px">FORGE Member · Active Tier</span>
+     <h2 style="font-size:1.45rem;margin-bottom:6px">5% Hardware &amp; Custom Build Discount · 10% Lab Service Discount</h2>
+     <p class="mut" style="font-size:.88rem">Applied automatically at checkout across all 53 components, custom 3D builds, and Kwun Tong lab engineering services, alongside our 3-year on-site Hong Kong warranty.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+     <a class="btn sm solid" href="builder.html">New 3D Build</a>
+     <a class="btn sm subtle" href="services.html">Book Lab Service</a>
+    </div>
+   </div>
+   <div class="g3" style="margin-top:18px;gap:12px">
+    <div style="background:#121212;border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+     <span class="mut" style="font-size:.78rem">Saved 3D Builds</span>
+     <b id="statBuilds" style="display:block;font-family:var(--mono);font-size:1.3rem;margin-top:2px">0</b>
+    </div>
+    <div style="background:#121212;border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+     <span class="mut" style="font-size:.78rem">Orders on Record</span>
+     <b id="statOrders" style="display:block;font-family:var(--mono);font-size:1.3rem;margin-top:2px">0</b>
+    </div>
+    <div style="background:#121212;border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+     <span class="mut" style="font-size:.78rem">Active Lab Builds</span>
+     <b id="statActive" style="display:block;font-family:var(--mono);font-size:1.3rem;margin-top:2px">0</b>
+    </div>
+   </div>
+  </div>
+
+  <h2 id="builds">Saved <span class="grad">builds</span></h2>
+  <div class="grid" id="bl" style="margin-top:16px"></div>
+
+  <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;margin-top:40px">
+   <h2 id="orders" style="margin:0">Order <span class="grad">history</span></h2>
+   <a class="btn sm subtle" href="order-detail.html">Lookup by Order ID →</a>
+  </div>
+  <div class="tblwrap" style="margin-top:14px">
+   <table>
+    <thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Stage</th><th>Action</th></tr></thead>
+    <tbody id="ol"></tbody>
+   </table>
+  </div>
+ </div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>const U=user();if(!U||U.role!=='customer'){location.href='login.html'};
-$('#nm').textContent=U?U.name:'';$('#out').onclick=e=>{e.preventDefault();localStorage.removeItem('forgeUser');location.href='index.html'};
-const B=JSON.parse(localStorage.getItem('forgeBuilds')||'[]'),O=JSON.parse(localStorage.getItem('forgeOrders')||'[]');
-$('#bl').innerHTML=B.map(b=>{
- const ids=Array.isArray(b.items)?b.items:[];
- const matchedKit=b.kit?byId(b.kit):PREBUILT.find(k=>k.parts.join(',')===ids.join(','));
- const href=matchedKit?`builder.html?kit=${encodeURIComponent(matchedKit.id)}`:'builder.html';
- const highlights=ids.map(id=>byId(id)).filter(p=>p&&['cpu','gpu','case'].includes(p.cat)).map(p=>p.name).slice(0,3);
- return `<div class="card" style="display:flex;flex-direction:column"><img src="${esc(b.img)}" alt="Saved build" style="width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;border:1px solid var(--line);background:#111111"><b class="price">${money(b.total||0)}</b><p class="mut" style="font-size:.84rem;margin-top:4px">${ids.length} parts · ${esc(b.date||'')}</p>${highlights.length?`<p class="mut" style="font-size:.78rem;margin:6px 0 14px">${esc(highlights.join(' · '))}</p>`:'<div style="margin-bottom:14px"></div>'}<a class="btn sm solid" href="${href}" style="margin-top:auto;align-self:flex-start">Load in 3D Builder →</a></div>`;
-}).join('')||'<p class="mut">No saved builds yet. <a href="builder.html">Open the 3D Builder</a> and press Save.</p>';
-$('#ol').innerHTML=O.map(o=>{
- const rawItems=String(o.items||'—');
- const shortItems=rawItems.length>54?rawItems.slice(0,54)+'…':rawItems;
- return `<tr><td style="font-family:var(--mono)">${esc(o.id)}</td><td style="font-family:var(--mono)">${esc(o.date)}</td><td>${esc(shortItems)}</td><td class="price">${money(o.total||0)}</td><td><span class="status s-w">Building</span></td></tr>`;
-}).join('')||'<tr><td colspan="5" class="mut">No orders yet.</td></tr>';</script>
+<script>
+const U = user();
+if (!U || U.role !== 'customer') {
+  location.href = 'login.html';
+}
+$('#nm').textContent = U ? U.name : '';
+$('#em').textContent = U && U.email ? U.email : 'demo@forge.hk';
+$('#out').onclick = e => {
+  e.preventDefault();
+  localStorage.removeItem('forgeUser');
+  location.href = 'index.html';
+};
+
+const STAGE_MAP = {
+  1: ['1 · Confirmed', ''],
+  2: ['2 · Parts Allocated', 's-w'],
+  3: ['3 · In Assembly', 's-w'],
+  4: ['4 · 24h Burn-In', 's-w'],
+  5: ['5 · Dispatched', 's-ok']
+};
+
+const FALLBACK_ORDERS = [
+  { id: 'FG-8419', date: '2026-11-15', items: 'FORGE Titan Ultra 2026 (Prebuilt System)', total: 5353, stage: 4, status: '24h OCCT Burn-In' },
+  { id: 'FG-8372', date: '2026-11-12', items: 'FORGE Studio Creator 2026 (Prebuilt System)', total: 3493, stage: 5, status: 'Dispatched' },
+  { id: 'FG-8295', date: '2026-11-16', items: 'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)', total: 2724, stage: 3, status: 'In Assembly' }
+];
+
+function getMemberOrders() {
+  if (typeof ensureSeedOrders === 'function') {
+    const seeded = ensureSeedOrders();
+    if (Array.isArray(seeded) && seeded.length) return seeded;
+  }
+  let cur = [];
+  try { cur = JSON.parse(localStorage.getItem('forgeOrders') || '[]'); } catch (e) { cur = []; }
+  if (!Array.isArray(cur)) cur = [];
+  const have = new Set(cur.map(o => o.id));
+  FALLBACK_ORDERS.forEach(s => { if (!have.has(s.id)) cur.push({ ...s }); });
+  localStorage.setItem('forgeOrders', JSON.stringify(cur));
+  return cur;
+}
+
+const B = JSON.parse(localStorage.getItem('forgeBuilds') || '[]');
+const O = getMemberOrders();
+
+$('#statBuilds').textContent = String(B.length);
+$('#statOrders').textContent = String(O.length);
+$('#statActive').textContent = String(O.filter(o => (Number(o.stage) || 1) < 5).length);
+
+window.addSavedBuild = function(idx) {
+  const b = B[idx];
+  if (!b) return;
+  const ids = Array.isArray(b.items) ? b.items : [];
+  const matchedKit = b.kit ? byId(b.kit) : PREBUILT.find(k => k.parts.join(',') === ids.join(','));
+  const item = {
+    key: 'build:' + ids.join(',') + ':' + idx,
+    id: matchedKit ? matchedKit.id : 'build',
+    type: 'build',
+    name: matchedKit ? matchedKit.name + ' (Saved Build)' : 'Custom 3D PC Configuration',
+    spec: `${ids.length} components · Custom 3D Rig`,
+    price: Number(b.total) || 0,
+    qty: 1,
+    img: b.img || 'img/renders/hero_rig_studio.png',
+    asm: 99,
+    items: ids
+  };
+  if (typeof forgeCart !== 'undefined' && forgeCart && typeof forgeCart.addToCart === 'function') {
+    forgeCart.addToCart(item, true);
+  } else {
+    let c = [];
+    try { c = JSON.parse(localStorage.getItem('forgeCart') || '[]'); } catch (e) { c = []; }
+    c.unshift(item);
+    localStorage.setItem('forgeCart', JSON.stringify(c));
+    toast('Saved build added to Shopping Bag');
+  }
+};
+
+window.openSavedBuild = function(idx) {
+  const b = B[idx];
+  if (!b) return true;
+  const ids = Array.isArray(b.items) ? b.items : [];
+  const matchedKit = b.kit ? byId(b.kit) : PREBUILT.find(k => k.parts.join(',') === ids.join(','));
+  if (matchedKit) {
+    location.href = `builder.html?kit=${encodeURIComponent(matchedKit.id)}`;
+    return false;
+  }
+  if (ids.length) {
+    localStorage.setItem('forgeEditBuild', JSON.stringify(ids));
+    location.href = 'builder.html?edit=1';
+    return false;
+  }
+  return true;
+};
+
+$('#bl').innerHTML = B.map((b, idx) => {
+  const ids = Array.isArray(b.items) ? b.items : [];
+  const matchedKit = b.kit ? byId(b.kit) : PREBUILT.find(k => k.parts.join(',') === ids.join(','));
+  const href = matchedKit ? `builder.html?kit=${encodeURIComponent(matchedKit.id)}` : (ids.length ? 'builder.html?edit=1' : 'builder.html');
+  const highlights = ids.map(id => byId(id)).filter(p => p && ['cpu', 'gpu', 'case'].includes(p.cat)).map(p => p.name).slice(0, 3);
+  return `<div class="card" style="display:flex;flex-direction:column">
+    <img src="${esc(b.img || 'img/renders/hero_rig_studio.png')}" alt="Saved build" style="width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;border:1px solid var(--line);background:#111111">
+    <b class="price">${money(b.total || 0)}</b>
+    <p class="mut" style="font-size:.84rem;margin-top:4px">${ids.length} parts · ${esc(b.date || '')}</p>
+    ${highlights.length ? `<p class="mut" style="font-size:.78rem;margin:6px 0 14px">${esc(highlights.join(' · '))}</p>` : '<div style="margin-bottom:14px"></div>'}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto">
+      <a class="btn sm solid" href="${href}" onclick="return openSavedBuild(${idx})">Load in 3D Builder →</a>
+      <button type="button" class="btn sm subtle" onclick="addSavedBuild(${idx})">Add to Bag</button>
+    </div>
+  </div>`;
+}).join('') || '<div class="card"><p class="mut" style="margin-bottom:12px">No saved builds yet. Open the 3D Configurator and click Save to store custom builds here.</p><a class="btn sm solid" href="builder.html">Open 3D Builder →</a></div>';
+
+$('#ol').innerHTML = O.map(o => {
+  const rawItems = String(o.items || '—');
+  const shortItems = rawItems.length > 48 ? rawItems.slice(0, 48) + '…' : rawItems;
+  const stNum = Math.min(5, Math.max(1, Number(o.stage) || 1));
+  const [stLabel, stCls] = STAGE_MAP[stNum] || ['1 · Confirmed', ''];
+  const dispStatus = o.status && stNum === 1 ? o.status : stLabel;
+  return `<tr>
+    <td style="font-family:var(--mono);white-space:nowrap"><b>${esc(o.id)}</b></td>
+    <td style="font-family:var(--mono);white-space:nowrap">${esc(o.date || '—')}</td>
+    <td>${esc(shortItems)}</td>
+    <td class="price">${money(o.total || 0)}</td>
+    <td><span class="status ${stCls}">${esc(dispStatus)}</span></td>
+    <td><a class="btn sm subtle" href="order-detail.html?id=${encodeURIComponent(o.id)}">Track &amp; Invoice →</a></td>
+  </tr>`;
+}).join('') || '<tr><td colspan="6" class="mut">No orders yet.</td></tr>';
+</script>
 </body>
 </html>
