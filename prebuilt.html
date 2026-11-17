@@ -52,7 +52,7 @@ $('#pb').innerHTML = PREBUILT.map(k => `
   </div>
 `).join('');
 const rows=['cpu','gpu','ram','ssd','psu','cool','case','acc'];
-$('#cmp').innerHTML='<tr><th>Component</th>'+PREBUILT.map(k=>`<th>${k.name}</th>`).join('')+'</tr>'+rows.map(c=>`<tr><td>${CATS[c]}</td>${PREBUILT.map(k=>{const list=k.parts.filter(i=>byId(i)?.cat===c).map(i=>byId(i).name);return `<td>${list.length?list.join('<br>'):'—'}</td>`}).join('')}</tr>`).join('')+'<tr><td><b>Price (inc. $99 Assembly)</b></td>'+PREBUILT.map(k=>`<td class="price">${money(kitPrice(k))}</td>`).join('')+'</tr>';
+$('#cmp').innerHTML='<thead><tr><th>Component</th>'+PREBUILT.map(k=>`<th>${esc(k.name)}</th>`).join('')+'</tr></thead><tbody>'+rows.map(c=>`<tr><td>${CATS[c]}</td>${PREBUILT.map(k=>{const list=k.parts.filter(i=>byId(i)?.cat===c).map(i=>esc(byId(i).name));return `<td>${list.length?list.join('<br>'):'—'}</td>`}).join('')}</tr>`).join('')+'<tr><td><b>Price (inc. $99 Assembly)</b></td>'+PREBUILT.map(k=>`<td class="price">${money(kitPrice(k))}</td>`).join('')+'</tr></tbody>';
 </script>
 </body>
 </html>

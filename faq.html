@@ -8,13 +8,54 @@
 </head>
 <body>
 <main>
-<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / FAQ</p><h1>Frequently Asked <span class="grad">Questions</span></h1><p>Click a question to expand the answer.</p></div></section>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / FAQ</p><h1>Frequently Asked <span class="grad">Questions</span></h1><p>Filter by topic or search keywords, then click any question to expand the answer.</p></div></section>
 <section><div class="wrap formbox">
-<div class="acc"><button class="acc-h">How long does it take to build my PC?</button><div class="acc-b"><p>Most custom PCs are assembled, stress-tested and delivered within 5 working days.</p></div></div><div class="acc"><button class="acc-h">Is the 3D model exactly what I will receive?</button><div class="acc-b"><p>The 3D Builder is a faithful representation of layout and colours. Exact component designs may vary slightly by manufacturer.</p></div></div><div class="acc"><button class="acc-h">What warranty do you offer?</button><div class="acc-b"><p>All FORGE PCs include a 3-year parts and labour warranty, plus lifetime technical support.</p></div></div><div class="acc"><button class="acc-h">Can I bring my own parts?</button><div class="acc-b"><p>Yes. Our Upgrade Service can install customer-supplied components for a small fee.</p></div></div><div class="acc"><button class="acc-h">Do you offer student or member discounts?</button><div class="acc-b"><p>Registered members get 10% off services and early access to new hardware.</p></div></div><div class="acc"><button class="acc-h">What payment methods do you accept?</button><div class="acc-b"><p>Visa, Mastercard, FPS, PayMe, Octopus and bank transfer.</p></div></div><div class="acc"><button class="acc-h">How do I make a complaint?</button><div class="acc-b"><p>Use our <a href="complaint.html">complaint form</a>. You will receive a ticket number and a reply within 48 hours.</p></div></div><div class="acc"><button class="acc-h">Is my personal data safe?</button><div class="acc-b"><p>We use HTTPS, hashed passwords and never sell customer data. See our security notes in the Support section.</p></div></div>
-<p class="center mut" style="margin-top:30px">Still need help? <a href="contact.html">Contact us</a></p></div></section>
+ <div class="field" style="margin-bottom:14px"><input id="faqQ" type="search" placeholder="Search FAQ (e.g. warranty, 3D, discount, FPS)…" aria-label="Search FAQ"></div>
+ <div class="filters" id="faqCats" style="margin-bottom:18px">
+  <button type="button" class="chip on" data-cat="all">All</button>
+  <button type="button" class="chip" data-cat="Orders &amp; Delivery">Orders &amp; Delivery</button>
+  <button type="button" class="chip" data-cat="3D Configurator">3D Configurator</button>
+  <button type="button" class="chip" data-cat="Warranty &amp; Security">Warranty &amp; Security</button>
+ </div>
+ <div id="faqList">
+  <div class="acc" data-cat="Orders &amp; Delivery"><button class="acc-h">How long does it take to build my PC?</button><div class="acc-b"><p>Most custom PCs are assembled, stress-tested for 24 hours at our Kwun Tong lab, and delivered within 5 working days.</p></div></div>
+  <div class="acc" data-cat="3D Configurator"><button class="acc-h">Is the 3D model exactly what I will receive?</button><div class="acc-b"><p>The 3D Builder is a faithful representation of layout, chassis finish, and lighting. Exact component shroud details may vary slightly by manufacturer.</p></div></div>
+  <div class="acc" data-cat="3D Configurator"><button class="acc-h">How does compatibility checking work in the 3D Builder?</button><div class="acc-b"><p>Our 3D Configurator automatically checks CPU-to-motherboard socket matching (LGA1851, AM5, LGA1700), PSU wattage headroom, and physical clearance before checkout.</p></div></div>
+  <div class="acc" data-cat="Warranty &amp; Security"><button class="acc-h">What warranty do you offer?</button><div class="acc-b"><p>All FORGE PCs include a 3-year parts and labour warranty, plus lifetime technical support from our Hong Kong engineering team.</p></div></div>
+  <div class="acc" data-cat="3D Configurator"><button class="acc-h">Can I bring my own parts?</button><div class="acc-b"><p>Yes. Our Component Upgrade Service ($49) installs customer-supplied hardware with full cable routing and stability validation.</p></div></div>
+  <div class="acc" data-cat="Orders &amp; Delivery"><button class="acc-h">Do you offer student or member discounts?</button><div class="acc-b"><p>Registered members get 5% off hardware &amp; custom builds, and 10% off lab services, plus saved 3D builds and early access to new hardware.</p></div></div>
+  <div class="acc" data-cat="Orders &amp; Delivery"><button class="acc-h">What payment methods do you accept?</button><div class="acc-b"><p>Visa, Mastercard, FPS, PayMe, Octopus and bank transfer.</p></div></div>
+  <div class="acc" data-cat="Warranty &amp; Security"><button class="acc-h">How do I make a complaint?</button><div class="acc-b"><p>Use our <a href="complaint.html">complaint form</a>. You will receive a ticket reference and a manager reply within 48 hours.</p></div></div>
+  <div class="acc" data-cat="Warranty &amp; Security"><button class="acc-h">Is my personal data safe?</button><div class="acc-b"><p>We enforce HTTPS, exclude passwords from URL query parameters, and validate checkout totals against the catalog lookup. See our Support pages for details.</p></div></div>
+ </div>
+ <p id="faqEmpty" class="mut center" style="display:none;padding:24px 0">No matching questions found. <a href="inquiry.html">Send us an inquiry</a>.</p>
+ <p class="center mut" style="margin-top:30px">Still need help? <a href="contact.html">Contact us</a></p>
+</div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
+<script>
+let activeCat='all';
+function filterFaq(){
+ const q=$('#faqQ').value.trim().toLowerCase();
+ let shown=0;
+ $$('#faqList .acc').forEach(a=>{
+  const catMatch=activeCat==='all'||a.dataset.cat===activeCat;
+  const textMatch=!q||a.textContent.toLowerCase().includes(q);
+  const show=catMatch&&textMatch;
+  a.style.display=show?'':'none';
+  if(show){shown++;a.classList.add('in');}
+ });
+ $('#faqEmpty').style.display=shown?'none':'block';
+}
+$$('#faqCats .chip').forEach(b=>b.onclick=()=>{
+ $$('#faqCats .chip').forEach(x=>x.classList.remove('on'));
+ b.classList.add('on');
+ activeCat=b.dataset.cat;
+ filterFaq();
+});
+$('#faqQ').oninput=filterFaq;
+</script>
 
 </body>
 </html>

@@ -18,11 +18,11 @@
         <a class="btn" href="products.html">Browse 53 Components</a>
       </div>
       <!-- Clean Swatch & Explode Bar (Zero Emojis) -->
-      <div style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center">
-        <button class="chip sm act" onclick="setHeroMode('#E5A93C',this)"><span class="swatch-dot" style="background:#E5A93C"></span>Warm Gold</button>
-        <button class="chip sm" onclick="setHeroMode('#10B981',this)"><span class="swatch-dot" style="background:#10B981"></span>Emerald</button>
-        <button class="chip sm" onclick="setHeroMode('#FF7A17',this)"><span class="swatch-dot" style="background:#FF7A17"></span>Signal Orange</button>
-        <button class="chip sm" id="heroExpBtn" onclick="const on=hero.toggleExplode();this.classList.toggle('act',on)">Explode View</button>
+      <div style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center" id="heroFinishBar">
+        <button class="chip sm act" type="button" data-theme-id="titanium" onclick="setHeroMode('titanium',this)"><span class="swatch-dot" style="background:#E5A93C"></span>Warm Gold</button>
+        <button class="chip sm" type="button" data-theme-id="emerald" onclick="setHeroMode('emerald',this)"><span class="swatch-dot" style="background:#10B981"></span>Emerald</button>
+        <button class="chip sm" type="button" data-theme-id="signal" onclick="setHeroMode('signal',this)"><span class="swatch-dot" style="background:#FF7A17"></span>Signal Orange</button>
+        <button class="chip sm" type="button" id="heroExpBtn" onclick="const on=hero.toggleExplode();this.classList.toggle('act',on)">Explode View</button>
       </div>
       <div class="stats">
         <div><b data-count="12400" data-suf="+">12,400+</b><span class="mut" style="font-size:.84rem">Systems delivered</span></div>
@@ -139,6 +139,119 @@
     <div class="grid" id="homePb" style="margin-top:36px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))"></div>
   </div></section>
 
+  <!-- Lab Frametime Benchmarks & Verified HK Client Builds -->
+  <section style="border-top:1px solid var(--line);background:#0D0D0D"><div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:32px" class="reveal">
+      <div>
+        <p class="eyebrow">Kwun Tong ISO-9001 Lab · 22°C Ambient</p>
+        <h2>Lab Frametime Benchmarks &amp; Verified HK Client Builds</h2>
+        <p class="mut" style="max-width:62ch">24-hour OCCT thermal burn-in telemetry across 1440p Ultra and 4K Native RT workloads, paired with recent local Hong Kong studio and competitive deliveries.</p>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center;font-family:var(--mono);font-size:.74rem;color:var(--mut)">
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="swatch-dot" style="background:var(--pri)"></span>1440p Ultra</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span class="swatch-dot" style="background:#F5F5F5"></span>4K Native RT</span>
+      </div>
+    </div>
+
+    <div class="bench-grid reveal" id="labBench">
+      <div class="bench-item">
+        <div class="bench-head">
+          <div><b style="font-size:1.02rem">FORGE Pulse 2026</b> <span class="mut" style="font-size:.82rem;margin-left:8px">Ryzen 5 9600X · RTX 5060 12GB</span></div>
+          <div class="bench-meta">1% Low 94 FPS · 28.0 dBA · <a href="builder.html?kit=pb1" style="color:var(--txt);text-decoration:underline;text-underline-offset:3px">Configure</a></div>
+        </div>
+        <div class="bench-bars">
+          <div class="bench-row"><span class="bench-lbl">1440p Ultra</span><div class="bench-track"><i class="bench-fill" style="width:49%"></i></div><span class="bench-val">118 FPS</span></div>
+          <div class="bench-row"><span class="bench-lbl">4K Native RT</span><div class="bench-track"><i class="bench-fill alt" style="width:40%"></i></div><span class="bench-val">68 FPS</span></div>
+        </div>
+      </div>
+
+      <div class="bench-item">
+        <div class="bench-head">
+          <div><b style="font-size:1.02rem">FORGE Apex 2026</b> <span class="mut" style="font-size:.82rem;margin-left:8px">Ryzen 7 9800X3D · RTX 5070 Ti 16GB</span></div>
+          <div class="bench-meta">1% Low 136 FPS · 29.2 dBA · <a href="builder.html?kit=pb2" style="color:var(--txt);text-decoration:underline;text-underline-offset:3px">Configure</a></div>
+        </div>
+        <div class="bench-bars">
+          <div class="bench-row"><span class="bench-lbl">1440p Ultra</span><div class="bench-track"><i class="bench-fill" style="width:70%"></i></div><span class="bench-val">168 FPS</span></div>
+          <div class="bench-row"><span class="bench-lbl">4K Native RT</span><div class="bench-track"><i class="bench-fill alt" style="width:61%"></i></div><span class="bench-val">104 FPS</span></div>
+        </div>
+      </div>
+
+      <div class="bench-item">
+        <div class="bench-head">
+          <div><b style="font-size:1.02rem">FORGE Studio Creator 2026</b> <span class="mut" style="font-size:.82rem;margin-left:8px">Ryzen 9 9950X · RTX 5080 16GB</span></div>
+          <div class="bench-meta">1% Low 158 FPS · 27.4 dBA · <a href="builder.html?kit=pb4" style="color:var(--txt);text-decoration:underline;text-underline-offset:3px">Configure</a></div>
+        </div>
+        <div class="bench-bars">
+          <div class="bench-row"><span class="bench-lbl">1440p Ultra</span><div class="bench-track"><i class="bench-fill" style="width:82%"></i></div><span class="bench-val">196 FPS</span></div>
+          <div class="bench-row"><span class="bench-lbl">4K Native RT</span><div class="bench-track"><i class="bench-fill alt" style="width:75%"></i></div><span class="bench-val">128 FPS</span></div>
+        </div>
+      </div>
+
+      <div class="bench-item">
+        <div class="bench-head">
+          <div><b style="font-size:1.02rem">FORGE Titan Ultra 2026</b> <span class="mut" style="font-size:.82rem;margin-left:8px">Core Ultra 9 285K · RTX 5090 32GB</span></div>
+          <div class="bench-meta">1% Low 198 FPS · 32.1 dBA · <a href="builder.html?kit=pb3" style="color:var(--txt);text-decoration:underline;text-underline-offset:3px">Configure</a></div>
+        </div>
+        <div class="bench-bars">
+          <div class="bench-row"><span class="bench-lbl">1440p Ultra</span><div class="bench-track"><i class="bench-fill" style="width:100%"></i></div><span class="bench-val">240 FPS</span></div>
+          <div class="bench-row"><span class="bench-lbl">4K Native RT</span><div class="bench-track"><i class="bench-fill alt" style="width:100%"></i></div><span class="bench-val">172 FPS</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin:40px 0 18px" class="reveal">
+      <div>
+        <p class="eyebrow" style="margin-bottom:4px">Verified HK Client Builds</p>
+        <h3>Field reports from local workstation &amp; competitive owners</h3>
+      </div>
+      <a class="btn sm subtle" href="comment.html">View &amp; Post Client Comments →</a>
+    </div>
+
+    <div class="g3">
+      <div class="card reveal" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="tag">Central · Quantitative Desk</span>
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--ok)">Verified #FG-8419</span>
+        </div>
+        <h3>FORGE Titan Ultra 2026</h3>
+        <p class="mut" style="font-size:.875rem">"Zero coil whine under sustained 32GB VRAM inference workloads. The Kwun Tong lab included the full 24-hour OCCT thermal sheet and memory timings log in the crate."</p>
+        <p style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">Ultra 9 285K · RTX 5090 · 32.1 dBA</p>
+        <div style="display:flex;gap:8px;margin-top:auto;padding-top:6px">
+          <a class="btn sm solid" href="builder.html?kit=pb3">Load Build</a>
+          <a class="btn sm subtle" href="comment.html">Client Notes</a>
+        </div>
+      </div>
+
+      <div class="card reveal" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="tag">Quarry Bay · Architecture Studio</span>
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--ok)">Verified #FG-8372</span>
+        </div>
+        <h3>FORGE Studio Creator 2026</h3>
+        <p class="mut" style="font-size:.875rem">"Unreal Engine 5 path-tracing renders clear 42% faster than our older dual-socket nodes while staying quiet right beside studio reference monitors."</p>
+        <p style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">Ryzen 9 9950X · RTX 5080 · 27.4 dBA</p>
+        <div style="display:flex;gap:8px;margin-top:auto;padding-top:6px">
+          <a class="btn sm solid" href="builder.html?kit=pb4">Load Build</a>
+          <a class="btn sm subtle" href="comment.html">Client Notes</a>
+        </div>
+      </div>
+
+      <div class="card reveal" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span class="tag">Sha Tin · Competitive FPS</span>
+          <span style="font-family:var(--mono);font-size:.72rem;color:var(--ok)">Verified #FG-8295</span>
+        </div>
+        <h3>FORGE Apex 2026</h3>
+        <p class="mut" style="font-size:.875rem">"9800X3D + 5070 Ti stays locked above 165 FPS at 1440p with frametime variance under 0.6ms. Braided 12V-2x6 cable routing arrived spotless."</p>
+        <p style="font-family:var(--mono);font-size:.74rem;color:var(--mut)">9800X3D · RTX 5070 Ti · 61°C Load</p>
+        <div style="display:flex;gap:8px;margin-top:auto;padding-top:6px">
+          <a class="btn sm solid" href="builder.html?kit=pb2">Load Build</a>
+          <a class="btn sm subtle" href="comment.html">Client Notes</a>
+        </div>
+      </div>
+    </div>
+  </div></section>
+
   <section><div class="wrap"><div class="cta reveal">
     <p class="eyebrow">Start Building</p>
     <h2>Configure your system in 3D</h2><p class="mut" style="margin:10px auto 24px;max-width:48ch">Press <kbd style="font-family:var(--mono);padding:2px 6px;border:1px solid var(--line-hi);border-radius:4px;color:var(--txt)">⌘K</kbd> anywhere to search components, or open the interactive builder.</p>
@@ -152,17 +265,37 @@
 <script src="js/main.js"></script>
 <script src="js/pc3d.js"></script>
 <script>
-  const hero=createPC(document.getElementById('heroCanvas'),{auto:true,airflow:true,dist:13.2,rgb:0xE5A93C});
+  const initTheme=(typeof getTheme==='function')?getTheme():{id:'titanium',hex:'#E5A93C'};
+  const hero=createPC(document.getElementById('heroCanvas'),{auto:true,airflow:true,dist:13.2,rgb:initTheme.hex});
   PREBUILT[1].parts.forEach(id=>hero.set(byId(id).cat,byId(id),false));
-  function setHeroMode(hex,btn){
-    hero.setRGB(hex);
-    btn.parentElement.querySelectorAll('.chip').forEach(c=>{if(c.id!=='heroExpBtn')c.classList.remove('act')});
-    btn.classList.add('act');
+  const anat=createPC(document.getElementById('anatomyCanvas'),{auto:false,airflow:false,dist:10.2,rgb:initTheme.hex});
+  PREBUILT[2].parts.forEach(id=>anat.set(byId(id).cat,byId(id),false));
+
+  function syncHeroChips(theme){
+    const activeId=(theme&&theme.id)?theme.id:((typeof getTheme==='function')?getTheme().id:'titanium');
+    document.querySelectorAll('#heroFinishBar .chip[data-theme-id]').forEach(c=>{
+      c.classList.toggle('act',c.dataset.themeId===activeId);
+    });
+  }
+  function setHeroMode(idOrHex){
+    if(typeof window.setAppTheme==='function'){
+      const next=window.setAppTheme(idOrHex);
+      if(next&&typeof toast==='function')toast(`Accent set to ${next.label}`);
+    }else{
+      hero.setRGB(idOrHex);
+      anat.setRGB(idOrHex);
+    }
     if(typeof sfx==='function')sfx('install');
   }
+  window.addEventListener('forge-theme',e=>{
+    syncHeroChips(e.detail);
+    if(e.detail&&e.detail.hex){
+      hero.setRGB(e.detail.hex);
+      anat.setRGB(e.detail.hex);
+    }
+  });
+  syncHeroChips(initTheme);
 
-  const anat=createPC(document.getElementById('anatomyCanvas'),{auto:false,airflow:false,dist:10.2,rgb:0xE5A93C});
-  PREBUILT[2].parts.forEach(id=>anat.set(byId(id).cat,byId(id),false));
   const expRange=document.getElementById('expRange'),expPct=document.getElementById('expPct');
   const stepCards=[...document.querySelectorAll('.anatomy-step')];
 

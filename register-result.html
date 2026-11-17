@@ -9,15 +9,25 @@
 <body>
 <main>
 <section class="phero"><div class="wrap formbox card center reveal">
- <div class="check">✓</div><h1>Welcome to <span class="grad">FORGE</span>, <span id="hi"></span>!</h1><p class="mut">Please check the details you submitted:</p>
- <div class="tblwrap" style="margin:24px 0;text-align:left"><table><tbody id="r"></tbody></table></div>
- <a class="btn solid" href="login.html">Log in now</a> <a class="btn" href="register.html">Edit details</a>
+ <div class="check"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+ <h1>Welcome to <span class="grad">FORGE</span>, <span id="hi"></span>!</h1>
+ <p class="mut">Please check the details you submitted:</p>
+ <div class="tblwrap" style="margin:24px 0 16px;text-align:left"><table><tbody id="r"></tbody></table></div>
+ <p style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.28);color:var(--ok);font-family:var(--mono);font-size:.76rem;margin:0 auto 22px">
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+  <span>Password excluded from URL query string · Stored in local demo session only</span>
+ </p>
+ <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+  <a class="btn solid" href="login.html">Log in now</a>
+  <a class="btn outline" href="register.html">Edit details</a>
+ </div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>const p=new URLSearchParams(location.search);$('#hi').textContent=p.get('fname')||'member';
+<script>const p=new URLSearchParams(location.search),memberId=ticket('FG-MBR');$('#hi').textContent=p.get('fname')||'member';
 fillResult($('#r'),{fname:'First name',lname:'Last name',email:'Email',phone:'Phone',dob:'Date of birth',gender:'Gender',district:'District',newsletter:'Newsletter'});
-const tr=document.createElement('tr');tr.innerHTML='<td>Interests</td><td></td>';tr.lastChild.textContent=p.getAll('use').join(', ')||'—';$('#r').append(tr);</script>
+const tr=document.createElement('tr');tr.innerHTML='<td>Interests</td><td></td>';tr.lastChild.textContent=p.getAll('use').join(', ')||'—';$('#r').append(tr);
+$('#r').insertAdjacentHTML('afterbegin',`<tr><td>Member ID</td><td><b style="font-family:var(--mono)">${esc(memberId)}</b></td></tr>`);</script>
 </body>
 </html>

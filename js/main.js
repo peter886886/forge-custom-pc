@@ -17,7 +17,7 @@ const ICONS={
  cube:`<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" y1="22" x2="12" y2="12"/></svg>`
 };
 
-/* Lighting & Accent Themes (Zero Purple): Warm Gold | Emerald | Signal Orange */
+/* Lighting & Accent Themes (Pure Carbon Accents): Warm Gold | Emerald | Signal Orange */
 const THEMES=[
  {id:'titanium',label:'Warm Gold',hex:'#E5A93C',rgb:[229,169,60]},
  {id:'emerald', label:'Emerald',  hex:'#10B981',rgb:[16,185,129]},
@@ -27,6 +27,19 @@ let curThemeId=localStorage.getItem('forgeTheme')||'titanium';
 if(!THEMES.some(t=>t.id===curThemeId))curThemeId='titanium';
 document.documentElement.setAttribute('data-theme',curThemeId);
 function getTheme(){return THEMES.find(t=>t.id===curThemeId)||THEMES[0]}
+window.setAppTheme=function(idOrHex){
+ const needle=String(idOrHex||'').trim().toLowerCase();
+ const next=THEMES.find(t=>t.id.toLowerCase()===needle||t.hex.toLowerCase()===needle);
+ if(!next)return null;
+ curThemeId=next.id;
+ localStorage.setItem('forgeTheme',curThemeId);
+ document.documentElement.setAttribute('data-theme',curThemeId);
+ const tl=$('#themeLbl'),td=$('#themeDot');
+ if(tl)tl.textContent=next.label;
+ if(td)td.style.background=next.hex;
+ window.dispatchEvent(new CustomEvent('forge-theme',{detail:next}));
+ return next;
+};
 
 /* Subtle Web Audio Tactile Click */
 let actx=null,sfxOn=localStorage.getItem('forgeSfx')!=='0';
@@ -74,7 +87,7 @@ function buildChrome(){
  <div><h4>Products</h4><ul><li><a href="builder.html">3D Configurator</a></li><li><a href="products.html">Components</a></li><li><a href="prebuilt.html">Prebuilt Systems</a></li><li><a href="services.html">Services</a></li></ul></div>
  <div><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="news.html">Build Guides</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="sitemap.html">Site Map</a></li></ul></div>
  <div><h4>Support</h4><ul><li><a href="contact.html">Contact</a></li><li><a href="faq.html">FAQ</a></li><li><a href="complaint.html">Support Ticket</a></li><li><a href="login.html">Account</a></li></ul></div>
- </div><p class="copy"><span>© 2026 FORGE Custom PC Ltd. Hong Kong.</span><span><a href="sitemap.html">Site Map</a> · <a href="faq.html">Warranty & Terms</a></span></p></footer>
+ </div><p class="copy"><span>© 2026 FORGE Custom PC Ltd. · Mong Kok Sino Centre Showroom · Kwun Tong ISO-9001 Burn-In Lab · 3-Yr On-Site HK Warranty · Visa / Mastercard / FPS / PayMe / Octopus</span><span><a href="sitemap.html">Site Map</a> · <a href="faq.html">Warranty &amp; Terms</a></span></p></footer>
  <button id="toTop" aria-label="Back to top">↑</button>
  <div class="cmdk-backdrop" id="cmdk"><div class="cmdk" onclick="event.stopPropagation()">
   <div class="cmdk-in"><span style="display:inline-flex;width:16px;height:16px;color:var(--mut)">${ICONS.search}</span><input id="cmdkIn" placeholder="Search 53 components, prebuilt systems, or pages…" autocomplete="off"><kbd style="font-family:var(--mono);font-size:.7rem;color:var(--mut)">ESC</kbd></div>
@@ -85,14 +98,7 @@ function buildChrome(){
  $('#sfxBtn').onclick=e=>{sfxOn=!sfxOn;localStorage.setItem('forgeSfx',sfxOn?'1':'0');e.currentTarget.innerHTML=sfxOn?ICONS.volOn:ICONS.volOff;if(sfxOn)sfx('install');toast(sfxOn?'UI sound enabled':'UI sound muted')};
  $('#themeBtn').onclick=()=>{
   const idx=(THEMES.findIndex(t=>t.id===curThemeId)+1)%THEMES.length;
-  const next=THEMES[idx];
-  curThemeId=next.id;
-  localStorage.setItem('forgeTheme',curThemeId);
-  document.documentElement.setAttribute('data-theme',curThemeId);
-  const tl=$('#themeLbl'),td=$('#themeDot');
-  if(tl)tl.textContent=next.label;
-  if(td)td.style.background=next.hex;
-  window.dispatchEvent(new CustomEvent('forge-theme',{detail:next}));
+  const next=window.setAppTheme(THEMES[idx].id);
   sfx('install');
   toast(`Accent set to ${next.label}`);
  };
@@ -147,11 +153,31 @@ function initCmdK(){
   const f=items.filter(x=>x[0].toLowerCase().includes(q.toLowerCase())||x[2].toLowerCase().includes(q.toLowerCase())).slice(0,10);
   list.innerHTML=f.map((x,i)=>`<a class="cmdk-item ${i===0?'act':''}" href="${x[1]}"><span>${esc(x[0])}</span><small>${esc(x[2])}</small></a>`).join('')||'<p class="mut center" style="padding:18px">No matching results.</p>';
  }
- const open=()=>{bd.classList.add('show');inp.value='';draw();setTimeout(()=>inp.focus(),30);sfx()};
+ const open=()=>{bd.classList.add('show');inp.value='';draw();inp.focus();sfx()};
  const close=()=>bd.classList.remove('show');
  $('#cmdBtn').onclick=open;bd.onclick=close;
  inp.oninput=e=>draw(e.target.value);
- inp.onkeydown=e=>{if(e.key==='Enter'){const a=$('.cmdk-item.act',list);if(a)location.href=a.getAttribute('href')}};
+ inp.onkeydown=e=>{
+  const rows=$$('.cmdk-item',list);
+  if(!rows.length)return;
+  let idx=rows.findIndex(r=>r.classList.contains('act'));
+  if(e.key==='ArrowDown'){
+   e.preventDefault();
+   if(idx>=0)rows[idx].classList.remove('act');
+   idx=(idx+1)%rows.length;
+   rows[idx].classList.add('act');
+   rows[idx].scrollIntoView({block:'nearest'});
+  }else if(e.key==='ArrowUp'){
+   e.preventDefault();
+   if(idx>=0)rows[idx].classList.remove('act');
+   idx=(idx-1+rows.length)%rows.length;
+   rows[idx].classList.add('act');
+   rows[idx].scrollIntoView({block:'nearest'});
+  }else if(e.key==='Enter'){
+   const a=$('.cmdk-item.act',list)||rows[0];
+   if(a)location.href=a.getAttribute('href');
+  }
+ };
  addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();bd.classList.contains('show')?close():open()}else if(e.key==='Escape')close()});
 }
 
@@ -183,7 +209,7 @@ function initReveal(){
  const mo=new MutationObserver(muts=>{muts.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.classList.contains('reveal'))observeAll(n.parentElement||document);else observeAll(n)}}))});
  mo.observe(document.body,{childList:true,subtree:true});
 }
-function initCounters(){$$('[data-count]').forEach(el=>{const end=+el.dataset.count;let v=0;const st=()=>{v+=Math.ceil(end/50);if(v>=end)v=end;el.textContent=v.toLocaleString()+(el.dataset.suf||'');if(v<end)requestAnimationFrame(st)};new IntersectionObserver((e,o)=>{if(e[0].isIntersecting){st();o.disconnect()}}).observe(el)})}
+function initCounters(){$$('[data-count]').forEach(el=>{const end=+el.dataset.count,pre=el.dataset.pre||'',suf=el.dataset.suf||'';let v=0;const st=()=>{v+=Math.ceil(end/50);if(v>=end)v=end;el.textContent=pre+v.toLocaleString('en-US')+suf;if(v<end)requestAnimationFrame(st)};new IntersectionObserver((e,o)=>{if(e[0].isIntersecting){st();o.disconnect()}}).observe(el)})}
 
 function validate(form){let ok=true;$$('[data-rule]',form).forEach(f=>{const v=f.value.trim();let msg='';
  f.dataset.rule.split('|').forEach(r=>{const[k,a]=r.split(':');

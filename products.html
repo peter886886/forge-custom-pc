@@ -86,8 +86,8 @@
  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;align-items:center">
   <div class="filters" id="f"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <input id="q" placeholder="Search 53 components &amp; accessories…" style="width:240px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#121212;color:var(--txt);font:inherit;font-size:.86rem" aria-label="Search components">
-    <select id="sort" style="width:170px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#121212;color:var(--txt);font:inherit;font-size:.86rem" aria-label="Sort components"><option value="">Sort: Featured</option><option value="lo">Price: Low → High</option><option value="hi">Price: High → Low</option></select>
+    <input id="q" placeholder="Search 53 components &amp; accessories…" style="width:240px;max-width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#121212;color:var(--txt);font:inherit;font-size:.86rem" aria-label="Search components">
+    <select id="sort" style="width:170px;max-width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#121212;color:var(--txt);font:inherit;font-size:.86rem" aria-label="Sort components"><option value="">Sort: Featured</option><option value="lo">Price: Low → High</option><option value="hi">Price: High → Low</option></select>
     <button class="chip" id="view" type="button">Table View</button>
   </div>
  </div>
@@ -147,10 +147,10 @@
 <script src="js/main.js"></script>
 <script src="js/pc3d.js"></script>
 <script>
-let cat = 'all', tbl = false, quickViewer = null;
+let cat = 'all', tbl = false, quickViewer = null, modalTimer = null;
 
 const urlParams = qs();
-if (urlParams.cat) cat = urlParams.cat;
+if (urlParams.cat && CATS[urlParams.cat]) cat = urlParams.cat;
 
 function buildFilterBar() {
   const catCounts = {};
@@ -197,12 +197,14 @@ function switchModalTab(mode) {
 }
 
 function close3DModal() {
+  clearTimeout(modalTimer);
   $('#modal3D').classList.remove('show');
   if (quickViewer) { quickViewer.destroy(); quickViewer = null; }
 }
 
 function open3DModal(p, startTab) {
   if (!p) return;
+  clearTimeout(modalTimer);
   $('#m3dCat').textContent = CATS[p.cat] || p.cat;
   $('#m3dTitle').textContent = p.name;
   $('#m3dSpec').textContent = p.spec;
@@ -214,11 +216,15 @@ function open3DModal(p, startTab) {
 
   switchModalTab(startTab || '3d');
   $('#modal3D').classList.add('show');
-  if (quickViewer) quickViewer.destroy();
-  setTimeout(() => {
-    quickViewer = createPartViewer(document.getElementById('quickCanvas'), p);
+  if (quickViewer) { quickViewer.destroy(); quickViewer = null; }
+  modalTimer = setTimeout(() => {
+    try { quickViewer = createPartViewer(document.getElementById('quickCanvas'), p); }
+    catch (e) { console.warn('Quick 3D viewer error:', e); }
   }, 40);
 }
+addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('#modal3D').classList.contains('show')) close3DModal();
+});
 
 function draw() {
   const spotlight = $('#accSpotlight');
@@ -245,8 +251,8 @@ function draw() {
         <span class="tag">${CATS[p.cat]}</span>
         <button class="chip sm" type="button" style="padding:3px 9px;font-size:.72rem" onclick="open3DModal(byId('${p.id}'),'3d')">3D Preview</button>
       </div>
-      <h3 style="margin-top:10px;font-size:1.02rem"><a href="product-detail.html?id=${p.id}" style="color:var(--txt)">${p.name}</a></h3>
-      <p class="mut" style="font-size:.83rem;margin:4px 0 14px">${p.spec}</p>
+      <h3 style="margin-top:10px;font-size:1.02rem"><a href="product-detail.html?id=${p.id}" style="color:var(--txt)">${esc(p.name)}</a></h3>
+      <p class="mut" style="font-size:.83rem;margin:4px 0 14px">${esc(p.spec)}</p>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:4px">
         <span class="price">${money(p.price)}</span>
         <div style="display:flex;gap:6px">
@@ -262,11 +268,11 @@ function draw() {
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           <img src="img/products/${p.id}.png" style="width:40px;height:40px;object-fit:contain;background:#111111;border-radius:6px;padding:3px;border:1px solid var(--line)" alt="${p.name}">
-          <a href="product-detail.html?id=${p.id}" style="color:var(--txt)"><b>${p.name}</b></a>
+          <a href="product-detail.html?id=${p.id}" style="color:var(--txt)"><b>${esc(p.name)}</b></a>
         </div>
       </td>
       <td><span class="tag">${CATS[p.cat]}</span></td>
-      <td class="mut">${p.spec}</td>
+      <td class="mut">${esc(p.spec)}</td>
       <td class="price">${money(p.price)}</td>
       <td>
         <div style="display:flex;gap:6px">

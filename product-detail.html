@@ -53,7 +53,7 @@
   </div>
 
   <!-- Installed Fitment Quick Preview Card -->
-  <div class="card" style="margin-top:14px;padding:14px;display:grid;grid-template-columns:148px 1fr;gap:14px;align-items:center;background:#141414">
+  <div class="card" style="margin-top:14px;padding:14px;display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center;background:#141414">
    <div style="height:100px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:pointer" id="quickEffectThumb" title="Click to inspect installed inside 3D rig">
     <img id="installedEffectImg" src="img/installed/g6.png" style="width:100%;height:100%;object-fit:cover" alt="Installed in PC Preview">
    </div>
@@ -113,7 +113,7 @@
 <script src="js/main.js"></script>
 <script src="js/pc3d.js"></script>
 <script>
-const p = byId(qs().id) || PARTS[17];
+const p = PARTS.find(x => x.id === qs().id) || PARTS[17];
 document.title = p.name + ' | FORGE';
 $('#pn').textContent = p.name;
 $('#crumbCat').textContent = CATS[p.cat];
@@ -152,10 +152,11 @@ let rigViewer = null;
 function ensureRigViewer() {
   if (rigViewer) return;
   try {
+    const targetSocket = p.socket || 'AM5';
     const sampleBuild = {
       case: byId(p.cat === 'case' ? p.id : 'x1'),
-      mb:   byId(p.cat === 'mb'   ? p.id : (p.socket === 'LGA1851' ? 'm1' : 'm3')),
-      cpu:  byId(p.cat === 'cpu'  ? p.id : (p.socket === 'LGA1851' ? 'c6' : 'c4')),
+      mb:   byId(p.cat === 'mb'   ? p.id : (targetSocket === 'LGA1851' ? 'm1' : targetSocket === 'LGA1700' ? 'm6' : 'm3')),
+      cpu:  byId(p.cat === 'cpu'  ? p.id : (targetSocket === 'LGA1851' ? 'c2' : targetSocket === 'LGA1700' ? 'c6' : 'c4')),
       cool: byId(p.cat === 'cool' ? p.id : 'k2'),
       ram:  byId(p.cat === 'ram'  ? p.id : 'r2'),
       gpu:  byId(p.cat === 'gpu'  ? p.id : 'g6'),
@@ -242,7 +243,7 @@ $('#rigExplodeBtn').onclick = function() {
   this.classList.toggle('on', ex);
 };
 
-$('#buy').onclick = () => location.href = `order-confirm.html?id=${p.id}&qty=${Math.max(1, +$('#qty').value || 1)}`;
+$('#buy').onclick = () => location.href = `order-confirm.html?id=${p.id}&qty=${Math.max(1, Math.min(99, Math.floor(+$('#qty').value || 1)))}`;
 $('#add3d').href = 'builder.html?add=' + p.id;
 $('#spec').innerHTML = [
   ['Category', CATS[p.cat]],
@@ -270,8 +271,8 @@ $('#pairedAcc').innerHTML = pairedParts.map(acc => `
       <img class="alt-photo" src="img/installed/${acc.id}.png" style="width:100%;height:100%;object-fit:cover" alt="${acc.name} Installed">
     </a>
     <span class="tag" style="font-size:.66rem;align-self:flex-start">${CATS[acc.cat]}</span>
-    <h4 style="margin:8px 0 4px;font-size:.94rem"><a href="product-detail.html?id=${acc.id}" style="color:var(--txt)">${acc.name}</a></h4>
-    <p class="mut" style="font-size:.78rem;margin-bottom:12px">${acc.spec}</p>
+    <h4 style="margin:8px 0 4px;font-size:.94rem"><a href="product-detail.html?id=${acc.id}" style="color:var(--txt)">${esc(acc.name)}</a></h4>
+    <p class="mut" style="font-size:.78rem;margin-bottom:12px">${esc(acc.spec)}</p>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:6px">
       <b class="price" style="font-size:1rem">${money(acc.price)}</b>
       <div style="display:flex;gap:6px">

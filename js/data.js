@@ -1,4 +1,4 @@
-/* FORGE — 2026 Hardware Catalogue & Precision CAD-Style Schematics (No AI Purple) */
+/* FORGE — 2026 Hardware Catalogue & Precision CAD-Style Schematics */
 const CATS = {
   cpu: 'Processor',
   mb: 'Motherboard',
@@ -65,14 +65,14 @@ const PARTS = [
   { id: 'k5', cat: 'cool', name: 'Thermalright Peerless Assassin', price: 39, watt: 4, perf: 0, spec: 'Dual-Tower · 6 Heatpipes · Budget Air Cooling King', type: 'air' },
 
   // 8. Showcase Chassis
-  { id: 'x1', cat: 'case', name: 'Lian Li O11 Dynamic EVO RGB', price: 169, watt: 0, perf: 0, spec: 'Dual-chamber · Top/Bottom ARGB Diffuser Strips · Tinted Glass', color: 0x1a1d24 },
-  { id: 'x2', cat: 'case', name: 'NZXT H6 Flow White', price: 119, watt: 0, perf: 0, spec: 'Mid tower · 45° Angled Corner Intake Airflow · Dual White Fans', color: 0xe8ebf0 },
-  { id: 'x3', cat: 'case', name: 'Fractal Design North XL', price: 189, watt: 0, perf: 0, spec: 'Full tower · Genuine FSC Walnut Front Slats · Smoked Glass', color: 0x22262d },
-  { id: 'x4', cat: 'case', name: 'Hyte Y70 Touch Infinite', price: 379, watt: 0, perf: 0, spec: 'Panoramic Corner · Integrated 14.5" 688×2560 4K Touch Display', color: 0x1c212a },
-  { id: 'x5', cat: 'case', name: 'FORGE Titanium Stealth Pro', price: 249, watt: 0, perf: 0, spec: 'CNC Aerospace Titanium · Smoked Tempered Glass · Noise-Dampened', color: 0x2b3440 },
+  { id: 'x1', cat: 'case', name: 'Lian Li O11 Dynamic EVO RGB', price: 169, watt: 0, perf: 0, spec: 'Dual-chamber · Top/Bottom ARGB Diffuser Strips · Tinted Glass', color: 0x181818 },
+  { id: 'x2', cat: 'case', name: 'NZXT H6 Flow White', price: 119, watt: 0, perf: 0, spec: 'Mid tower · 45° Angled Corner Intake Airflow · Dual White Fans', color: 0xe8e8e6 },
+  { id: 'x3', cat: 'case', name: 'Fractal Design North XL', price: 189, watt: 0, perf: 0, spec: 'Full tower · Genuine FSC Walnut Front Slats · Smoked Glass', color: 0x22211f },
+  { id: 'x4', cat: 'case', name: 'Hyte Y70 Touch Infinite', price: 379, watt: 0, perf: 0, spec: 'Panoramic Corner · Integrated 14.5" 688×2560 4K Touch Display', color: 0x1b1b1b },
+  { id: 'x5', cat: 'case', name: 'FORGE Titanium Stealth Pro', price: 249, watt: 0, perf: 0, spec: 'CNC Aerospace Titanium · Smoked Tempered Glass · Noise-Dampened', color: 0x2c2c2a },
 
   // 9. Hardware Modding & Accessories
-  { id: 'a1', cat: 'acc', name: 'FORGE Braided Cable Kit', price: 49, watt: 0, perf: 0, spec: '16-Pin 12V-2x6 + 24-Pin ATX + Dual 8-Pin EPS · Stealth Cyan/Black Combs' },
+  { id: 'a1', cat: 'acc', name: 'FORGE Braided Cable Kit', price: 49, watt: 0, perf: 0, spec: '16-Pin 12V-2x6 + 24-Pin ATX + Dual 8-Pin EPS · Carbon Black & Titanium Combs' },
   { id: 'a2', cat: 'acc', name: 'Lian Li UNI FAN TL LCD 3-Pack', price: 149, watt: 12, perf: 0, spec: '3×120mm Daisy-Chain Reverse Fans · 1.6" Custom GIF/Telemetry LCD Screen', rgb: 1 },
   { id: 'a3', cat: 'acc', name: 'Thermal Grizzly Kryonaut Extreme 2g', price: 22, watt: 0, perf: 0, spec: '14.2 W/m·K Industrial Overclocking Nano-Aluminum Thermal Compound' },
   { id: 'a4', cat: 'acc', name: 'FORGE Anti-Sag GPU Support Arm', price: 25, watt: 0, perf: 0, spec: 'CNC Anodized Aluminum Telescopic Stand with Magnetic Neodymium Base' },
@@ -118,68 +118,80 @@ const PREBUILT = [
 const byId = id => PARTS.find(p => p.id === id) || PREBUILT.find(p => p.id === id);
 const kitPrice = k => k.parts.reduce((s, i) => s + (byId(i) ? byId(i).price : 0), 0) + 99;
 
-/* Detailed CAD-style SVG hardware schematics (cyan/emerald/amber palette — zero purple) */
-const HUE = { cpu: 190, mb: 160, ram: 175, gpu: 38, ssd: 45, psu: 200, cool: 188, case: 205, acc: 145 };
+/* Detailed CAD-style SVG hardware schematics (Pure Carbon + Warm Gold/Emerald palette) */
+const PALETTE = {
+  cpu:  ['#E5A93C', '#10B981'],
+  mb:   ['#10B981', '#E5A93C'],
+  ram:  ['#E5A93C', '#34D399'],
+  gpu:  ['#E5A93C', '#FF7A17'],
+  ssd:  ['#F59E0B', '#10B981'],
+  psu:  ['#E5A93C', '#F59E0B'],
+  cool: ['#10B981', '#34D399'],
+  case: ['#E5A93C', '#A3A3A3'],
+  acc:  ['#10B981', '#E5A93C']
+};
 function partSVG(catOrPart, alt) {
+  const sEsc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const isObj = typeof catOrPart === 'object' && catOrPart !== null;
   const cat = isObj ? catOrPart.cat : (catOrPart || 'case');
   const pid = isObj ? catOrPart.id.toUpperCase() : cat.toUpperCase();
-  const label = isObj ? catOrPart.name.slice(0, 26) : `${cat.toUpperCase()} // 2026 ARCH`;
-  const subLabel = isObj ? catOrPart.spec.slice(0, 34) : 'ISO-9001 CAD SCHEMATIC';
-  const h = HUE[cat] || 190, c = `hsl(${h},92%,56%)`, c2 = `hsl(${(h + 30) % 200},85%,52%)`, bg = alt ? '#0c1420' : '#0d121c';
-  const grid = `<g stroke="#242422" stroke-width=".5" opacity=".55"><path d="M0 34h240M0 68h240M0 102h240M0 136h240M48 0v170M96 0v170M144 0v170M192 0v170"/></g>
+  const label = sEsc(isObj ? catOrPart.name.slice(0, 26) : `${cat.toUpperCase()} · 2026 ARCH`);
+  const subLabel = sEsc(isObj ? catOrPart.spec.slice(0, 34) : 'ISO-9001 CAD SCHEMATIC');
+  const [c, c2] = PALETTE[cat] || PALETTE.case;
+  const bg = alt ? '#161616' : '#111111';
+  const grid = `<g stroke="#242424" stroke-width=".5" opacity=".65"><path d="M0 34h240M0 68h240M0 102h240M0 136h240M48 0v170M96 0v170M144 0v170M192 0v170"/></g>
   <g stroke="${c}" stroke-width="1" opacity=".45" fill="none"><path d="M8 18v-10h10M232 18v-10h-10M8 152v10h10M232 152v10h-10"/></g>
-  <text x="14" y="18" font-family="monospace" font-size="8.5" fill="${c}" font-weight="bold">CAD // ${pid} · ${label}</text>
-  <text x="14" y="159" font-family="monospace" font-size="7.5" fill="#94a3b8">${subLabel}</text>`;
+  <text x="14" y="18" font-family="monospace" font-size="8.5" fill="${c}" font-weight="bold">CAD · ${sEsc(pid)} · ${label}</text>
+  <text x="14" y="159" font-family="monospace" font-size="7.5" fill="#969696">${subLabel}</text>`;
   const g = {
-    cpu: `<g stroke="#475569" stroke-width="1.5"><path d="M62 50h116M62 62h116M62 74h116M62 96h116M62 108h116M62 120h116M85 28v114M102 28v114M120 28v114M138 28v114M155 28v114"/></g>
-    <rect x="68" y="34" width="104" height="102" rx="8" fill="#162030" stroke="${c}" stroke-width="2"/>
-    <rect x="82" y="48" width="76" height="74" rx="5" fill="#242422" stroke="${c2}" stroke-width="1.5"/>
-    <rect x="96" y="62" width="48" height="46" rx="3" fill="${c}" opacity=".2"/>
+    cpu: `<g stroke="#404040" stroke-width="1.5"><path d="M62 50h116M62 62h116M62 74h116M62 96h116M62 108h116M62 120h116M85 28v114M102 28v114M120 28v114M138 28v114M155 28v114"/></g>
+    <rect x="68" y="34" width="104" height="102" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
+    <rect x="82" y="48" width="76" height="74" rx="5" fill="#1A1A1A" stroke="${c2}" stroke-width="1.5"/>
+    <rect x="96" y="62" width="48" height="46" rx="3" fill="${c}" opacity=".18"/>
     <text x="120" y="89" font-family="monospace" font-size="12" text-anchor="middle" fill="${c}" font-weight="bold">FORGE-26</text>`,
-    mb: `<rect x="52" y="20" width="136" height="130" rx="6" fill="#0f1e19" stroke="${c}" stroke-width="2"/>
-    <rect x="60" y="28" width="18" height="68" rx="2" fill="#263345" stroke="${c2}"/>
-    <rect x="90" y="38" width="42" height="42" rx="3" fill="#242422" stroke="${c}" stroke-width="1.5"/>
+    mb: `<rect x="52" y="20" width="136" height="130" rx="6" fill="#161616" stroke="${c}" stroke-width="2"/>
+    <rect x="60" y="28" width="18" height="68" rx="2" fill="#1A1A1A" stroke="${c2}"/>
+    <rect x="90" y="38" width="42" height="42" rx="3" fill="#1A1A1A" stroke="${c}" stroke-width="1.5"/>
     <circle cx="111" cy="59" r="11" fill="none" stroke="${c2}" stroke-dasharray="3 2"/>
-    <g fill="#242422" stroke="${c2}"><rect x="144" y="32" width="6" height="62"/><rect x="154" y="32" width="6" height="62"/><rect x="164" y="32" width="6" height="62"/></g>
+    <g fill="#1A1A1A" stroke="${c2}"><rect x="144" y="32" width="6" height="62"/><rect x="154" y="32" width="6" height="62"/><rect x="164" y="32" width="6" height="62"/></g>
     <rect x="64" y="104" width="108" height="9" rx="2" fill="${c}" opacity=".85"/>
-    <rect x="64" y="122" width="108" height="7" rx="2" fill="#263345"/>
-    <rect x="138" y="116" width="34" height="24" rx="3" fill="#242422" stroke="${c}"/>`,
-    ram: `<g transform="translate(0,-4)"><rect x="44" y="44" width="152" height="36" rx="4" fill="#151e2e" stroke="${c}" stroke-width="1.8"/>
+    <rect x="64" y="122" width="108" height="7" rx="2" fill="#262626"/>
+    <rect x="138" y="116" width="34" height="24" rx="3" fill="#1A1A1A" stroke="${c}"/>`,
+    ram: `<g transform="translate(0,-4)"><rect x="44" y="44" width="152" height="36" rx="4" fill="#161616" stroke="${c}" stroke-width="1.8"/>
     <rect x="44" y="44" width="152" height="8" rx="2" fill="${c}"/>
-    <g fill="#0b0f17">${[60, 82, 104, 126, 148, 170].map(x => `<rect x="${x}" y="56" width="14" height="16" rx="1"/>`).join('')}</g>
-    <rect x="44" y="96" width="152" height="36" rx="4" fill="#151e2e" stroke="${c2}" stroke-width="1.8"/>
+    <g fill="#111111">${[60, 82, 104, 126, 148, 170].map(x => `<rect x="${x}" y="56" width="14" height="16" rx="1"/>`).join('')}</g>
+    <rect x="44" y="96" width="152" height="36" rx="4" fill="#1A1A1A" stroke="${c2}" stroke-width="1.8"/>
     <rect x="44" y="96" width="152" height="8" rx="2" fill="${c2}"/>
-    <g fill="#0b0f17">${[60, 82, 104, 126, 148, 170].map(x => `<rect x="${x}" y="108" width="14" height="16" rx="1"/>`).join('')}</g></g>`,
-    gpu: `<rect x="24" y="44" width="192" height="76" rx="8" fill="#141c2b" stroke="${c}" stroke-width="2"/>
+    <g fill="#111111">${[60, 82, 104, 126, 148, 170].map(x => `<rect x="${x}" y="108" width="14" height="16" rx="1"/>`).join('')}</g></g>`,
+    gpu: `<rect x="24" y="44" width="192" height="76" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
     <path d="M24 58h192" stroke="${c}" stroke-width="2.5"/>
-    ${[64, 120, 176].map(x => `<circle cx="${x}" cy="86" r="22" fill="#0b1018" stroke="${c2}" stroke-width="1.8"/><circle cx="${x}" cy="86" r="6" fill="${c}"/><path d="M${x - 14} 86h28M${x} 72v28M${x - 10} 76l20 20M${x + 10} 76l-20 20" stroke="#334155"/>`).join('')}
-    <rect x="42" y="120" width="96" height="6" rx="1" fill="#f59e0b"/>`,
-    ssd: `<rect x="28" y="62" width="184" height="46" rx="5" fill="#111927" stroke="${c}" stroke-width="2"/>
-    <rect x="28" y="68" width="8" height="34" fill="#f59e0b"/>
-    <rect x="48" y="70" width="44" height="30" rx="2" fill="#242422" stroke="${c2}"/>
-    <rect x="102" y="70" width="44" height="30" rx="2" fill="#242422"/><rect x="156" y="70" width="42" height="30" rx="2" fill="#242422"/>
+    ${[64, 120, 176].map(x => `<circle cx="${x}" cy="86" r="22" fill="#111111" stroke="${c2}" stroke-width="1.8"/><circle cx="${x}" cy="86" r="6" fill="${c}"/><path d="M${x - 14} 86h28M${x} 72v28M${x - 10} 76l20 20M${x + 10} 76l-20 20" stroke="#3A3A3A"/>`).join('')}
+    <rect x="42" y="120" width="96" height="6" rx="1" fill="#E5A93C"/>`,
+    ssd: `<rect x="28" y="62" width="184" height="46" rx="5" fill="#161616" stroke="${c}" stroke-width="2"/>
+    <rect x="28" y="68" width="8" height="34" fill="#E5A93C"/>
+    <rect x="48" y="70" width="44" height="30" rx="2" fill="#1A1A1A" stroke="${c2}"/>
+    <rect x="102" y="70" width="44" height="30" rx="2" fill="#1A1A1A"/><rect x="156" y="70" width="42" height="30" rx="2" fill="#1A1A1A"/>
     <text x="70" y="89" font-family="monospace" font-size="9" text-anchor="middle" fill="${c}">PCIe 5.0</text>`,
-    psu: `<rect x="48" y="32" width="144" height="106" rx="8" fill="#121926" stroke="${c}" stroke-width="2"/>
-    <circle cx="102" cy="85" r="36" fill="none" stroke="${c2}" stroke-width="1.8"/>
-    <circle cx="102" cy="85" r="24" fill="none" stroke="#334155" stroke-width="1.2"/>
+    psu: `<rect x="48" y="32" width="144" height="106" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
+    <circle cx="102" cy="85" r="36" fill="#111111" stroke="${c2}" stroke-width="1.8"/>
+    <circle cx="102" cy="85" r="24" fill="none" stroke="#3A3A3A" stroke-width="1.2"/>
     <circle cx="102" cy="85" r="10" fill="${c}" opacity=".8"/>
-    <path d="M66 85h72M102 49v72M77 60l50 50M127 60l-50 50" stroke="#334155"/>
+    <path d="M66 85h72M102 49v72M77 60l50 50M127 60l-50 50" stroke="#3A3A3A"/>
     <text x="166" y="76" font-family="monospace" font-size="11" text-anchor="middle" fill="${c}" font-weight="bold">80+</text>
-    <text x="166" y="92" font-family="monospace" font-size="9" text-anchor="middle" fill="#94a3b8">ATX 3.1</text>`,
-    cool: `<rect x="38" y="42" width="164" height="86" rx="8" fill="#121a28" stroke="${c}" stroke-width="2"/>
-    ${[78, 162].map(x => `<circle cx="${x}" cy="85" r="31" fill="#0b1018" stroke="${c2}" stroke-width="2"/><circle cx="${x}" cy="85" r="9" fill="${c}"/><path d="M${x - 20} 85h40M${x} 65v40" stroke="#334155"/>`).join('')}`,
-    case: `<rect x="74" y="16" width="92" height="138" rx="8" fill="#111826" stroke="${c}" stroke-width="2"/>
+    <text x="166" y="92" font-family="monospace" font-size="9" text-anchor="middle" fill="#969696">ATX 3.1</text>`,
+    cool: `<rect x="38" y="42" width="164" height="86" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
+    ${[78, 162].map(x => `<circle cx="${x}" cy="85" r="31" fill="#111111" stroke="${c2}" stroke-width="2"/><circle cx="${x}" cy="85" r="9" fill="${c}"/><path d="M${x - 20} 85h40M${x} 65v40" stroke="#3A3A3A"/>`).join('')}`,
+    case: `<rect x="74" y="16" width="92" height="138" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
     <rect x="82" y="24" width="62" height="102" rx="4" fill="${c}" opacity=".1" stroke="${c2}"/>
-    <rect x="82" y="130" width="76" height="16" rx="2" fill="#242422"/>
-    <circle cx="154" cy="44" r="9" fill="none" stroke="${c}" stroke-width="2"/>
-    <circle cx="154" cy="70" r="9" fill="none" stroke="${c}" stroke-width="2"/>
-    <circle cx="154" cy="96" r="9" fill="none" stroke="${c}" stroke-width="2"/>`,
-    acc: `<rect x="40" y="36" width="160" height="98" rx="8" fill="#111c1d" stroke="${c}" stroke-width="2"/>
-    <circle cx="120" cy="85" r="32" fill="none" stroke="${c2}" stroke-width="2"/>
+    <rect x="82" y="130" width="76" height="16" rx="2" fill="#1A1A1A"/>
+    <circle cx="154" cy="44" r="9" fill="#111111" stroke="${c}" stroke-width="2"/>
+    <circle cx="154" cy="70" r="9" fill="#111111" stroke="${c}" stroke-width="2"/>
+    <circle cx="154" cy="96" r="9" fill="#111111" stroke="${c}" stroke-width="2"/>`,
+    acc: `<rect x="40" y="36" width="160" height="98" rx="8" fill="#161616" stroke="${c}" stroke-width="2"/>
+    <circle cx="120" cy="85" r="32" fill="#1A1A1A" stroke="${c2}" stroke-width="2"/>
     <path d="M60 85h120M120 53v64" stroke="${c}" stroke-width="1.5" stroke-dasharray="4 2"/>
     <text x="120" y="89" font-family="monospace" font-size="11" text-anchor="middle" fill="${c}">PRO ACC</text>`
   };
-  const glow = alt ? `<circle cx="120" cy="85" r="88" fill="${c}" opacity=".11"/>` : '';
+  const glow = alt ? `<circle cx="120" cy="85" r="88" fill="${c}" opacity=".09"/>` : '';
   return `<svg viewBox="0 0 240 170" class="${alt ? 'alt' : 'main'}" xmlns="http://www.w3.org/2000/svg"><rect width="240" height="170" fill="${bg}"/>${grid}${glow}<g${alt ? ' transform="scale(1.04) rotate(-3 120 85)"' : ''}>${g[cat] || g.case}</g></svg>`;
 }

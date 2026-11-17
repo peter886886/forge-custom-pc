@@ -70,9 +70,9 @@ function render() {
         ${PARTS.filter(x => x.cat === c).map(x => {
           const bad = compat(x);
           const isSel = isAcc ? accs.some(a => a.id === x.id) : (p && p.id === x.id);
-          return `<div class="opt ${isSel ? 'sel' : ''} ${bad ? 'no' : ''}" data-id="${x.id}" title="${bad}" style="display:flex;align-items:center;gap:10px">
+          return `<div class="opt ${isSel ? 'sel' : ''} ${bad ? 'no' : ''}" data-id="${x.id}" title="${esc(bad)}" style="display:flex;align-items:center;gap:10px">
             <img src="img/products/${x.id}.png" style="width:40px;height:40px;object-fit:contain;background:#111111;border-radius:6px;padding:3px;border:1px solid var(--line);flex-shrink:0" alt="${esc(x.name)}">
-            <span style="flex:1">${esc(x.name)}<br><small class="mut">${bad || x.spec}</small></span>
+            <span style="flex:1">${esc(x.name)}<br><small class="mut">${esc(bad || x.spec)}</small></span>
             <b style="flex-shrink:0">${money(x.price)}</b>
           </div>`;
         }).join('')}
@@ -90,7 +90,7 @@ function render() {
   $$('.opt').forEach(o => o.onclick = () => {
     if (o.classList.contains('no')) {
       sfx('warn');
-      return toast('⚠ ' + o.title);
+      return toast('Incompatible: ' + o.title);
     }
     const id = o.dataset.id;
     if (id === 'none') {
@@ -135,6 +135,7 @@ function pick(p, quiet) {
   pc.set(p.cat, p, !quiet);
   if (p.cat === 'case') pc.setCaseColor(caseCol || p.color);
   if (!quiet) {
+    $$('[data-kit]').forEach(b => b.classList.remove('act'));
     sfx('install');
     render();
     toast(p.name + ' installed');
@@ -150,12 +151,7 @@ function updateQuickModUI() {
   const accs = getAccList();
   ['a1', 'a4', 'a2', 'a6'].forEach(id => {
     const btn = $('#quickAcc' + id.toUpperCase());
-    if (btn) {
-    const active = accs.some(a => a.id === id);
-    if (btn) {
-      btn.classList.toggle('act', active);
-    }
-    }
+    if (btn) btn.classList.toggle('act', accs.some(a => a.id === id));
   });
 }
 
@@ -164,7 +160,9 @@ function stats() {
   const t = totalPrice(), w = totalWatt(), cap = sel.psu ? sel.psu.cap : 0;
   $('#tot').textContent = money(t);
   $('#watt').textContent = w + 'W';
-  $('#wattBar').style.width = Math.min(100, cap ? w / cap * 100 : w / 12) + '%';
+  const wattBar = $('#wattBar');
+  wattBar.style.width = Math.min(100, cap ? w / cap * 100 : w / 12) + '%';
+  wattBar.style.background = (cap && w > cap * 0.9) ? 'var(--danger)' : (cap && w > cap * 0.75) ? 'var(--warn)' : 'var(--txt)';
   const perf = ((sel.gpu?.perf || 0) * 0.72 + (sel.cpu?.perf || 0) * 0.28);
   $('#perfBar').style.width = perf + '%';
 
@@ -190,13 +188,14 @@ function stats() {
   const miss = ORDER.filter(c => c !== 'acc' && !sel[c]).length;
   let warn = '';
   if (cap && w > cap * 0.9) {
-    warn = '⚠ PSU overloaded — choose ' + Math.ceil(w * 1.25 / 50) * 50 + 'W+';
+    warn = 'PSU overloaded — choose ' + Math.ceil(w * 1.25 / 50) * 50 + 'W+';
   } else if (miss) {
     warn = miss + ' core component(s) remaining';
   } else {
     warn = '✓ Ready to Build ' + (accs.length ? `with ${accs.length} Mod(s)` : '(Standard Build)');
   }
   $('#warn').textContent = warn;
+  $('#warn').classList.toggle('bad', !!(cap && w > cap * 0.9));
   $('#warn').style.color = cap && w > cap * 0.9 ? 'var(--danger)' : miss ? 'var(--mut)' : 'var(--ok)';
 }
 
@@ -207,15 +206,21 @@ $$('#resTabs button').forEach(b => b.onclick = () => {
   stats();
 });
 
-// Colour pickers (Bespoke Champagne Gold default)
-const RGBS = ['#E5A93C', '#38BDF8', '#10B981', '#FF7A17', '#F59E0B', '#FFFFFF'], CASES = ['#161615', '#e8ebf0', '#1c1917', '#242422', '#1f2922'];
+// Colour pickers (synced with global accent theme)
+const RGBS = ['#E5A93C', '#38BDF8', '#10B981', '#FF7A17', '#F59E0B', '#FFFFFF'], CASES = ['#161615', '#e8e8e6', '#1c1917', '#242422', '#1f2922'];
 let caseCol = null;
-$('#rgbSw').innerHTML = RGBS.map((c, i) => `<button style="background:${c};color:${c}" data-c="${c}" class="${i ? '' : 'on'}" aria-label="RGB ${c}"></button>`).join('');
+const initHex = (typeof getTheme === 'function' ? getTheme().hex : '#E5A93C').toUpperCase();
+$('#rgbSw').innerHTML = RGBS.map(c => `<button style="background:${c};color:${c}" data-c="${c}" class="${c.toUpperCase() === initHex ? 'on' : ''}" aria-label="RGB ${c}"></button>`).join('');
 $('#caseSw').innerHTML = CASES.map(c => `<button style="background:${c};color:${c}" data-c="${c}" aria-label="Case ${c}"></button>`).join('');
 $$('#rgbSw button').forEach(b => b.onclick = () => {
   $$('#rgbSw button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
   pc.setRGB(b.dataset.c);
+});
+window.addEventListener('forge-theme', e => {
+  if (!e.detail || !e.detail.hex) return;
+  const h = e.detail.hex.toUpperCase();
+  $$('#rgbSw button').forEach(b => b.classList.toggle('on', b.dataset.c.toUpperCase() === h));
 });
 $$('#caseSw button').forEach(b => b.onclick = () => {
   $$('#caseSw button').forEach(x => x.classList.remove('on'));
@@ -273,6 +278,8 @@ function loadKit(id) {
   if (!k) return;
   ORDER.forEach(c => { delete sel[c]; pc.set(c, null); });
   caseCol = null;
+  $$('#caseSw button').forEach(x => x.classList.remove('on'));
+  $$('[data-kit]').forEach(b => b.classList.toggle('act', b.dataset.kit === id));
   k.parts.forEach(pid => pick(byId(pid), true));
   render();
   sfx('install');
@@ -284,6 +291,11 @@ function loadKit(id) {
 $$('[data-kit]').forEach(b => b.onclick = () => loadKit(b.dataset.kit));
 $('#clear').onclick = () => {
   ORDER.forEach(c => { delete sel[c]; pc.set(c, null); });
+  caseCol = null;
+  $$('#caseSw button').forEach(x => x.classList.remove('on'));
+  $$('[data-kit]').forEach(b => b.classList.remove('act'));
+  const pill = $('#partInspector');
+  if (pill) pill.classList.remove('show');
   pick(byId('x1'), true);
   render();
 };
@@ -318,7 +330,7 @@ $('#bBuy').onclick = () => {
   }
   if (sel.psu.cap < totalWatt() * 0.9) {
     sfx('warn');
-    return toast('⚠ Your PSU is too weak');
+    return toast('Your PSU wattage is too low for this build');
   }
   pc.resetView();
   setTimeout(() => {
@@ -326,6 +338,12 @@ $('#bBuy').onclick = () => {
     location.href = 'order-confirm.html?src=builder';
   }, 120);
 };
+addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const m = $('#shotModal');
+    if (m && m.classList.contains('show')) m.classList.remove('show');
+  }
+});
 
 const q = qs();
 if (q.kit) loadKit(q.kit);

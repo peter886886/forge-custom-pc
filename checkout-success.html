@@ -9,16 +9,82 @@
 <body>
 <main>
 <section class="phero"><div class="wrap formbox card center reveal">
- <div class="check">✓</div><h1>Thank you!</h1><p class="mut">Your order has been received and our technicians are on it.</p>
- <div class="tblwrap" style="margin:24px 0"><table><tbody id="r"></tbody></table></div>
- <a class="btn solid" href="index.html">Back to Home</a> <a class="btn" href="member-dashboard.html">My Orders</a>
+ <div class="check"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+ <h1>Thank you!</h1>
+ <p class="mut">Your order has been received and our technicians are on it.</p>
+ <div id="integrityStatus"></div>
+ <div class="tblwrap" style="margin:20px 0 24px;text-align:left"><table><tbody id="r"></tbody></table></div>
+ <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+  <a class="btn solid" href="index.html">Back to Home</a>
+  <a class="btn outline" href="member-dashboard.html">My Orders</a>
+ </div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>const q=qs(),id=ticket('FG');
-fillResult($('#r'),{name:'Name',address:'Delivery address',pay:'Payment',items:'Items',total:'Total (HK$)'});
-$('#r').insertAdjacentHTML('afterbegin',`<tr><td>Order no.</td><td><b>${id}</b></td></tr>`);
-const h=JSON.parse(localStorage.getItem('forgeOrders')||'[]');h.unshift({id,total:+q.total||0,date:new Date().toLocaleDateString(),items:q.items||''});localStorage.setItem('forgeOrders',JSON.stringify(h.slice(0,10)));localStorage.removeItem('forgeOrder');</script>
+<script>
+const q = qs(), id = ticket('FG');
+fillResult($('#r'), { name: 'Name', address: 'Delivery address', pay: 'Payment', items: 'Items' });
+$('#r').insertAdjacentHTML('afterbegin', `<tr><td>Order no.</td><td><b style="font-family:var(--mono)">${esc(id)}</b></td></tr>`);
+
+function resolveCatalogTotal(specStr) {
+  if (!specStr) return null;
+  const parts = specStr.split(':');
+  let rawSub = 0, asm = 0, ok = false;
+  if (parts[0] === 'svc' && parts.length >= 3) {
+    const pr = Math.max(0, Number(parts[1]));
+    const qt = Math.max(1, Number(parts[2]));
+    if (Number.isFinite(pr) && Number.isFinite(qt)) {
+      rawSub = pr * qt;
+      ok = true;
+    }
+  } else if (parts[0] === 'build' && parts[1]) {
+    const items = parts[1].split(',').map(s => byId(s.trim())).filter(Boolean);
+    if (items.length) {
+      rawSub = items.reduce((s, p) => s + (p.price || 0), 0);
+      asm = 99;
+      ok = true;
+    }
+  } else if (parts.length >= 2) {
+    const p = byId(parts[0]);
+    const qt = Math.max(1, Number(parts[1]) || 1);
+    if (p && Number.isFinite(qt)) {
+      rawSub = (p.parts ? kitPrice(p) : p.price) * qt;
+      ok = true;
+    }
+  }
+  if (!ok) return null;
+  const disc = user() ? Math.round(rawSub * 0.05) : 0;
+  return rawSub + asm - disc;
+}
+
+const submittedTotal = Number(q.total);
+const submittedDisplay = Number.isFinite(submittedTotal) ? submittedTotal : 0;
+let finalTotal = Math.max(0, Number(q.total) || 0);
+
+if (q.spec) {
+  const trustedTotal = resolveCatalogTotal(q.spec);
+  if (trustedTotal === null) {
+    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">CIS282 Parameter Tampering Alert</div><p style="font-size:.875rem;color:#FCA5A5">Submitted catalog specification could not be verified against catalog lookup.</p></div>`;
+    $('#r').insertAdjacentHTML('beforeend', `<tr><td>Submitted URL Total</td><td><span class="status s-b" style="margin-right:8px">Rejected</span><s class="mut" style="font-family:var(--mono)">${esc(money(submittedDisplay))}</s></td></tr><tr><td>Total (USD)</td><td><b class="price">${esc(money(finalTotal))}</b></td></tr>`);
+  } else if (Math.round(submittedTotal) !== trustedTotal) {
+    finalTotal = trustedTotal;
+    $('#integrityStatus').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-top:18px;color:#FECACA"><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span>CIS282 Parameter Tampering Alert</span></div><p id="tamperMsg" style="font-size:.875rem;line-height:1.5;color:#FCA5A5"></p></div>`;
+    $('#tamperMsg').textContent = `URL Parameter Tampering Blocked: Submitted total (${money(submittedDisplay)}) did not match catalog lookup — authoritative total (${money(trustedTotal)}) enforced.`;
+    $('#r').insertAdjacentHTML('beforeend', `<tr><td>Submitted URL Total</td><td><span class="status s-b" style="margin-right:8px">Rejected</span><s class="mut" style="font-family:var(--mono)">${esc(money(submittedDisplay))}</s></td></tr><tr><td>Verified Total</td><td><b class="price">${esc(money(trustedTotal))}</b> <span class="mut" style="font-family:var(--mono);font-size:.75rem">(USD)</span></td></tr>`);
+  } else {
+    finalTotal = trustedTotal;
+    $('#integrityStatus').innerHTML = `<div style="margin-top:16px"><span class="status s-ok">Catalog Price Integrity Verified</span></div>`;
+    $('#r').insertAdjacentHTML('beforeend', `<tr><td>Total (USD)</td><td><b class="price">${esc(money(trustedTotal))}</b></td></tr>`);
+  }
+} else {
+  $('#r').insertAdjacentHTML('beforeend', `<tr><td>Total (USD)</td><td><b class="price">${esc(money(finalTotal))}</b></td></tr>`);
+}
+
+const h = JSON.parse(localStorage.getItem('forgeOrders') || '[]');
+h.unshift({ id, total: finalTotal, date: new Date().toLocaleDateString(), items: q.items || '' });
+localStorage.setItem('forgeOrders', JSON.stringify(h.slice(0, 10)));
+localStorage.removeItem('forgeOrder');
+</script>
 </body>
 </html>

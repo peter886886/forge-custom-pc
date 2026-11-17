@@ -59,7 +59,7 @@
           <small class="mut" style="display:block;font-size:.72rem;font-family:var(--mono);margin-top:8px">Chassis finish</small>
           <div class="swatches" id="caseSw"></div>
         </div>
-        <div class="panel" style="min-width:280px">
+        <div class="panel" style="min-width:280px;max-width:100%">
           <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut" style="font-size:.84rem">Total</span><b class="price" id="tot">$0</b></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin-top:6px"><span class="mut">Power <b id="watt" style="color:var(--txt)">0W</b></span><div class="bar"><i id="wattBar"></i></div></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin:4px 0"><span class="mut">3DMark</span><div class="bar"><i id="perfBar"></i></div></div>
@@ -83,9 +83,9 @@
   </div>
 </main>
 
-<div class="modal" id="shotModal"><div class="card center">
+<div class="modal" id="shotModal" onclick="if(event.target===this)this.classList.remove('show')"><div class="card center">
   <h3>3D Configuration Snapshot</h3><img id="shotImg" alt="Snapshot of your custom PC" style="border-radius:8px;margin:14px 0;border:1px solid var(--line)">
-  <a class="btn solid" id="shotDl" download="forge-build.png">Download PNG</a> <button class="btn" onclick="this.closest('.modal').classList.remove('show')">Close</button>
+  <a class="btn solid" id="shotDl" download="forge-build.png">Download PNG</a> <button class="btn" type="button" onclick="this.closest('.modal').classList.remove('show')">Close</button>
 </div></div>
 
 <script src="lib/three.min.js"></script>

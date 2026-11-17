@@ -9,9 +9,9 @@
 <body>
 <main>
 <section><div class="wrap sidebar">
- <aside class="side card"><p class="eyebrow">Member</p><h3 id="nm"></h3><br><a class="on" href="#builds">Saved Builds</a><a href="#orders">Orders</a><a href="builder.html">New 3D Build</a><a href="#" id="out">Log Out</a></aside>
- <div><h2 id="builds">Saved <span class="grad">builds</span></h2><div class="grid" id="bl"></div>
-  <h2 id="orders" style="margin-top:40px">Order history</h2><div class="tblwrap"><table><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody id="ol"></tbody></table></div></div>
+ <aside class="side card"><p class="eyebrow">Member</p><h3 id="nm" style="margin-bottom:14px"></h3><a class="on" href="#builds">Saved Builds</a><a href="#orders">Orders</a><a href="builder.html">New 3D Build</a><a href="#" id="out">Log Out</a></aside>
+ <div><h2 id="builds">Saved <span class="grad">builds</span></h2><div class="grid" id="bl" style="margin-top:16px"></div>
+  <h2 id="orders" style="margin-top:40px">Order history</h2><div class="tblwrap" style="margin-top:14px"><table><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody id="ol"></tbody></table></div></div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
@@ -19,7 +19,17 @@
 <script>const U=user();if(!U||U.role!=='customer'){location.href='login.html'};
 $('#nm').textContent=U?U.name:'';$('#out').onclick=e=>{e.preventDefault();localStorage.removeItem('forgeUser');location.href='index.html'};
 const B=JSON.parse(localStorage.getItem('forgeBuilds')||'[]'),O=JSON.parse(localStorage.getItem('forgeOrders')||'[]');
-$('#bl').innerHTML=B.map(b=>`<div class="card"><img src="${b.img}" alt="Saved build" style="border-radius:10px;margin-bottom:10px"><b class="price">${money(b.total)}</b><p class="mut">${b.items.length} parts · ${b.date}</p></div>`).join('')||'<p class="mut">No saved builds yet. <a href="builder.html">Open the 3D Builder</a> and press Save.</p>';
-$('#ol').innerHTML=O.map(o=>`<tr><td>${esc(o.id)}</td><td>${o.date}</td><td>${esc(o.items).slice(0,50)}</td><td>${money(o.total)}</td><td><span class="status s-w">Building</span></td></tr>`).join('')||'<tr><td colspan="5" class="mut">No orders yet.</td></tr>';</script>
+$('#bl').innerHTML=B.map(b=>{
+ const ids=Array.isArray(b.items)?b.items:[];
+ const matchedKit=b.kit?byId(b.kit):PREBUILT.find(k=>k.parts.join(',')===ids.join(','));
+ const href=matchedKit?`builder.html?kit=${encodeURIComponent(matchedKit.id)}`:'builder.html';
+ const highlights=ids.map(id=>byId(id)).filter(p=>p&&['cpu','gpu','case'].includes(p.cat)).map(p=>p.name).slice(0,3);
+ return `<div class="card" style="display:flex;flex-direction:column"><img src="${esc(b.img)}" alt="Saved build" style="width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;border:1px solid var(--line);background:#111111"><b class="price">${money(b.total||0)}</b><p class="mut" style="font-size:.84rem;margin-top:4px">${ids.length} parts · ${esc(b.date||'')}</p>${highlights.length?`<p class="mut" style="font-size:.78rem;margin:6px 0 14px">${esc(highlights.join(' · '))}</p>`:'<div style="margin-bottom:14px"></div>'}<a class="btn sm solid" href="${href}" style="margin-top:auto;align-self:flex-start">Load in 3D Builder →</a></div>`;
+}).join('')||'<p class="mut">No saved builds yet. <a href="builder.html">Open the 3D Builder</a> and press Save.</p>';
+$('#ol').innerHTML=O.map(o=>{
+ const rawItems=String(o.items||'—');
+ const shortItems=rawItems.length>54?rawItems.slice(0,54)+'…':rawItems;
+ return `<tr><td style="font-family:var(--mono)">${esc(o.id)}</td><td style="font-family:var(--mono)">${esc(o.date)}</td><td>${esc(shortItems)}</td><td class="price">${money(o.total||0)}</td><td><span class="status s-w">Building</span></td></tr>`;
+}).join('')||'<tr><td colspan="5" class="mut">No orders yet.</td></tr>';</script>
 </body>
 </html>
