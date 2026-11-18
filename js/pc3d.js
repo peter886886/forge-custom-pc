@@ -403,9 +403,11 @@ function normalizeGlbToBox(sceneRoot, targetW, targetH, targetD, uniform = true)
     const s = Math.min(sx, sy, sz);
     sceneRoot.scale.multiplyScalar(s);
     sceneRoot.position.set(-center.x * s, -center.y * s, -center.z * s);
+    sceneRoot.userData.normScale = s;
   } else {
     sceneRoot.scale.set(sceneRoot.scale.x * sx, sceneRoot.scale.y * sy, sceneRoot.scale.z * sz);
     sceneRoot.position.set(-center.x * sx, -center.y * sy, -center.z * sz);
+    sceneRoot.userData.normScale = sx;
   }
   wrapper.add(sceneRoot);
   return wrapper;
@@ -452,6 +454,71 @@ function getGlbKeyForPart(part) {
   return fallbackCat[cat] || null;
 }
 
+// Project clean upright [0..1]x[0..1] planar UVs onto thin LCD telemetry screen meshes
+function ensurePlanarScreenUVs(obj) {
+  if (!obj.geometry || !obj.geometry.attributes || !obj.geometry.attributes.position) return;
+  const geo = obj.geometry.clone();
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox;
+  const dx = bb.max.x - bb.min.x;
+  const dy = bb.max.y - bb.min.y;
+  const dz = bb.max.z - bb.min.z;
+  const pos = geo.attributes.position;
+  const uvs = new Float32Array(pos.count * 2);
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    let u = 0.5, v = 0.5;
+    if (dx <= dy && dx <= dz) {
+      // Thin along X (+X facing screen: right is -Z, up is +Y)
+      u = (bb.max.z - z) / Math.max(dz, 1e-5);
+      v = (y - bb.min.y) / Math.max(dy, 1e-5);
+    } else if (dz <= dx && dz <= dy) {
+      // Thin along Z (+Z facing screen: right is +X, up is +Y)
+      u = (x - bb.min.x) / Math.max(dx, 1e-5);
+      v = (y - bb.min.y) / Math.max(dy, 1e-5);
+    } else {
+      // Thin along Y (+Y facing screen: right is +X, up is -Z)
+      u = (x - bb.min.x) / Math.max(dx, 1e-5);
+      v = (bb.max.z - z) / Math.max(dz, 1e-5);
+    }
+    uvs[i * 2] = u;
+    uvs[i * 2 + 1] = v;
+  }
+  geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  obj.geometry = geo;
+}
+
+// Compute exact local thin axis for SpinFan meshes and center disc around local (0,0,0) to prevent wobble/clipping
+function prepareSpinFanMesh(obj) {
+  let axis = 'z';
+  if (!obj.geometry) return axis;
+  obj.geometry.computeBoundingBox();
+  const bb = obj.geometry.boundingBox;
+  const dx = bb.max.x - bb.min.x;
+  const dy = bb.max.y - bb.min.y;
+  const dz = bb.max.z - bb.min.z;
+  if (dx <= dy && dx <= dz) axis = 'x';
+  else if (dy <= dx && dy <= dz) axis = 'y';
+  else axis = 'z';
+
+  const cx = (bb.min.x + bb.max.x) * 0.5;
+  const cy = (bb.min.y + bb.max.y) * 0.5;
+  const cz = (bb.min.z + bb.max.z) * 0.5;
+  const ox = axis === 'x' ? 0 : cx;
+  const oy = axis === 'y' ? 0 : cy;
+  const oz = axis === 'z' ? 0 : cz;
+  if (Math.abs(ox) > 1e-4 || Math.abs(oy) > 1e-4 || Math.abs(oz) > 1e-4) {
+    const g = obj.geometry.clone();
+    g.translate(-ox, -oy, -oz);
+    obj.geometry = g;
+    const shift = new THREE.Vector3(ox, oy, oz).applyQuaternion(obj.quaternion);
+    shift.multiply(obj.scale);
+    obj.position.add(shift);
+  }
+  return axis;
+}
+
 // Wire dynamic RGB materials, LCD telemetry screens, glass visibility, and spinning fans inside a loaded GLB
 function wireGlbInstance(root, opts) {
   opts = opts || {};
@@ -463,17 +530,16 @@ function wireGlbInstance(root, opts) {
     if (!obj.isMesh) return;
     const nm = obj.name || '';
 
-    // Fan rotation registration (SpinFan_<name>_<axis>)
+    // Fan rotation registration (exact bounding-box thin axis + centered hub)
     if (nm.indexOf('SpinFan_') === 0 && opts.spinList) {
-      let axis = 'z';
-      if (nm.endsWith('_X')) axis = 'x';
-      else if (nm.endsWith('_Y')) axis = 'y';
-      else if (nm.endsWith('_Z')) axis = 'z';
+      const axis = prepareSpinFanMesh(obj);
       opts.spinList.push({ mesh: obj, axis });
     }
 
-    // Tempered glass registration
+    // Tempered glass registration + exploded-view anchor
     if (nm.indexOf('Case_Glass') !== -1) {
+      obj.userData.basePos = obj.position.clone();
+      obj.userData.glassKind = nm.indexOf('Front') !== -1 ? 'front' : 'side';
       if (opts.glassRefs) opts.glassRefs.push(obj);
       obj.visible = opts.glassVisible !== undefined ? !!opts.glassVisible : true;
       obj.castShadow = false;
@@ -540,8 +606,9 @@ function wireGlbInstance(root, opts) {
       mat.roughness = 0.18;
     }
 
-    // Live LCD / Telemetry Screen surfaces
+    // Live LCD / Telemetry Screen surfaces (planar full-bleed UV mapped)
     if (matName.indexOf('Mat_LCD_Dynamic') !== -1 || nm.indexOf('LCD_') === 0) {
+      ensurePlanarScreenUVs(obj);
       let tex = null;
       if (nm.indexOf('Y70') !== -1 || pid === 'x4') {
         tex = makeVerticalTelemetryTex('HYTE Y70 · 4K TOUCH');
@@ -554,6 +621,8 @@ function wireGlbInstance(root, opts) {
         });
       } else if (nm.indexOf('UniFan') !== -1 || pid === 'a2') {
         tex = makeLabelTex({ w: 128, h: 128, bg: '#0A0A0A', border: '#E5A93C', title: '31°C', sub: '1400 RPM' });
+      } else if (nm.indexOf('HS_IPS') !== -1 || pid === 'k3') {
+        tex = makeTelemetryScreenTex('k3', 'HYDROSHIFT 2.88" IPS · 31°C');
       } else {
         tex = makeLabelTex({
           w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C',
@@ -561,7 +630,7 @@ function wireGlbInstance(root, opts) {
         });
         if (nm.indexOf('AIO_PumpScreen') !== -1) {
           tex.center.set(0.5, 0.5);
-          tex.rotation = -Math.PI / 2;
+          tex.rotation = Math.PI / 2;
         }
       }
       obj.material = new THREE.MeshBasicMaterial({ map: tex });
@@ -671,6 +740,8 @@ function createPC(canvas, opts) {
     darkMetal: new THREE.MeshStandardMaterial({ color: 0x1c1c1f, map: metalTex, metalness: 0.86, roughness: 0.26 }),
     whiteMetal: new THREE.MeshStandardMaterial({ color: 0xf4f4f5, map: lightMetalTex, metalness: 0.60, roughness: 0.28 }),
     walnutWood: new THREE.MeshStandardMaterial({ color: 0x6b4226, metalness: 0.08, roughness: 0.62 }),
+    cableDark: new THREE.MeshStandardMaterial({ color: 0x161618, metalness: 0.35, roughness: 0.58 }),
+    cableAccent: new THREE.MeshStandardMaterial({ color: initCol, emissive: initCol, emissiveIntensity: 0.22, metalness: 0.55, roughness: 0.36 }),
     rgb: new THREE.MeshStandardMaterial({ color: initCol, emissive: initCol, emissiveIntensity: 1.85, roughness: 0.15 }),
     rgb2: new THREE.MeshStandardMaterial({ color: initCol, emissive: initCol, emissiveIntensity: 1.40, roughness: 0.20 }),
     screen: new THREE.MeshBasicMaterial({ color: initCol })
@@ -698,9 +769,17 @@ function createPC(canvas, opts) {
     case: [0, 0, 0], mb: [0, 0, 0], cpu: [0, 0, 0], cool: [0, 0, 0],
     ram: [0, 0, 0], gpu: [0, 0, 0], ssd: [0, 0, 0], psu: [0, 0, 0], acc: [0, 0, 0]
   };
+  // Architectural +X open-side layer explosion (BVH-verified 0 overlaps & 0 floor clips across expT in [0,1])
   const EXP = {
-    case: [0, 0, 0], mb: [-0.95, 0, 0], cpu: [-0.45, 0.42, 0.42], cool: [0.65, 0.95, 0.65],
-    ram: [0.85, 0.35, 0.55], gpu: [1.35, -0.15, 0.95], ssd: [0.45, -0.25, 0.65], psu: [-0.65, -1.05, -0.45], acc: [1.15, -0.45, 1.05]
+    case: [-1.15, 0, 0.16], psu: [-1.15, 0, 0.16], mb: [-0.45, 0, 0.04],
+    cpu: [0.12, 0.04, -0.04], ssd: [0.12, -0.04, -0.04], ram: [0.68, 0.08, -0.08],
+    cool: [1.22, -0.03, -0.22], acc: [1.52, 0.05, -0.52], gpu: [2.08, 0.18, -0.32]
+  };
+  const ACC_CUSTOM_EXP = {
+    a7: [-0.35, -0.05, 0.12],
+    a8: [0.36, 0.06, -0.06],
+    a9: [-1.15, 0.0, 0.16],
+    a10: [-1.15, 0.55, 0.16]
   };
 
   function makeFan(radius, depth, hasRGB, bladeColor) {
@@ -732,18 +811,18 @@ function createPC(canvas, opts) {
   function makeBraidedCable(pts, radius, count, isCustomSleeve) {
     const cg = new THREE.Group();
     const curve = new THREE.CatmullRomCurve3(pts);
-    const cMat = isCustomSleeve ? M.rgb2 : M.darkMetal;
     for (let i = 0; i < count; i++) {
-      const off = (i - (count - 1) / 2) * (radius * 2.15);
-      const subPts = pts.map(p => new THREE.Vector3(p.x, p.y + off * 0.25, p.z + off));
+      const off = (i - (count - 1) / 2) * (radius * 2.05);
+      const subPts = pts.map(p => new THREE.Vector3(p.x, p.y + off * 0.18, p.z + off));
       const c2 = new THREE.CatmullRomCurve3(subPts);
       const geo = new THREE.TubeGeometry(c2, 20, radius, 8, false);
-      cg.add(new THREE.Mesh(geo, (isCustomSleeve && i % 2 === 0) ? M.rgb : cMat));
+      const strandMat = (isCustomSleeve && i % 2 === 0) ? M.cableAccent : M.cableDark;
+      cg.add(new THREE.Mesh(geo, strandMat));
     }
     if (isCustomSleeve) {
-      [0.32, 0.65].forEach(t => {
+      [0.34, 0.68].forEach(t => {
         const pt = curve.getPoint(t);
-        const comb = new THREE.Mesh(new THREE.BoxGeometry(radius * 4.5, radius * 3.2, count * radius * 2.5), M.chrome);
+        const comb = new THREE.Mesh(new THREE.BoxGeometry(radius * 3.8, radius * 2.8, count * radius * 2.3), M.chrome);
         comb.position.copy(pt);
         cg.add(comb);
       });
@@ -760,6 +839,7 @@ function createPC(canvas, opts) {
       if (!sceneRoot || slotGen[catKey] !== gen) return;
       const normalized = normalizeGlbToBox(sceneRoot, targetSize[0], targetSize[1], targetSize[2], true);
       normalized.position.set(pos[0], pos[1], pos[2]);
+      normalized.userData.basePos = new THREE.Vector3(pos[0], pos[1], pos[2]);
 
       const localSpins = [];
       const localGlass = [];
@@ -776,8 +856,6 @@ function createPC(canvas, opts) {
         rgbMatList: localRgbMats
       });
 
-      if (extraSetup) extraSetup(normalized);
-
       const grp = groups[catKey];
       // Replace procedural fallback inside catKey (for single-part slots) or tagged wrapper (for acc)
       if (catKey !== 'acc') {
@@ -787,8 +865,11 @@ function createPC(canvas, opts) {
         const old = grp.getObjectByName('accSlot_' + part.id);
         if (old) grp.remove(old);
         normalized.name = 'accSlot_' + part.id;
+        normalized.userData.accId = part.id;
         grp.add(normalized);
       }
+
+      if (extraSetup) extraSetup(normalized, grp);
 
       glbSpinFans.push(...localSpins);
       dynamicGlassMeshes.push(...localGlass);
@@ -797,7 +878,7 @@ function createPC(canvas, opts) {
     });
   }
 
-  // 1. CHASSIS BUILDER (adapts to x1..x5)
+  // 1. CHASSIS BUILDER (adapts to x1..x5 with CNC PSU telemetry window)
   function buildCase(casePart) {
     const g = groups.case;
     while (g.children.length) g.remove(g.children[0]);
@@ -821,46 +902,54 @@ function createPC(canvas, opts) {
     addBox(2.35, 0.12, 4.45, 0, -2.30, 0);
     addBox(2.35, 0.12, 4.45, 0, 2.30, 0);
     addBox(2.35, 4.48, 0.10, 0, 0, -2.18);
-    addBox(0.08, 4.45, 4.25, -1.04, 0, 0, M.caseInterior);
-    addBox(0.11, 0.85, 0.34, -1.00, 1.05, 1.48, M.darkMetal);
-    addBox(0.11, 0.85, 0.34, -1.00, -0.15, 1.48, M.darkMetal);
-    addBox(2.22, 0.86, 4.30, 0, -1.82, 0, M.caseInterior);
-    addBox(2.24, 0.04, 4.32, 0, -1.38, 0, M.vrm);
-    addBox(2.25, 0.035, 0.02, 0, -1.37, 2.16, M.rgb);
+    addBox(0.08, 4.45, 4.25, -1.00, 0, 0, M.caseInterior);
+    addBox(0.09, 0.85, 0.34, -0.96, 1.05, 1.48, M.darkMetal);
+    addBox(0.09, 0.85, 0.34, -0.96, -0.15, 1.48, M.darkMetal);
+    // Hollow PSU shroud with CNC telemetry cutout revealing PSU bay
+    addBox(2.24, 0.05, 4.30, 0, -1.36, 0, M.vrm);
+    addBox(0.05, 0.86, 2.15, 1.09, -1.82, 1.05, M.caseInterior);
+    addBox(2.25, 0.03, 0.02, 0, -1.35, 2.16, M.rgb);
 
     if (cid === 'x3') {
       addBox(2.35, 0.18, 0.14, 0, 2.22, 2.18, M.vrmGold);
       for (let i = -4; i <= 4; i++) addBox(0.16, 4.32, 0.12, i * 0.24, -0.04, 2.20, M.walnutWood);
     } else if (cid === 'x4') {
-      const screenTex = makeTelemetryScreenTex('y70', 'HYTE Y70 · 4K TOUCH');
-      const touchMesh = new THREE.Mesh(new THREE.BoxGeometry(0.62, 3.85, 0.06), new THREE.MeshBasicMaterial({ map: screenTex }));
-      touchMesh.position.set(0.88, 0.15, 1.98);
-      touchMesh.rotation.y = -Math.PI / 4;
+      const screenTex = makeVerticalTelemetryTex('HYTE Y70 · 4K TOUCH');
+      const touchMesh = new THREE.Mesh(new THREE.BoxGeometry(0.60, 3.85, 0.04), new THREE.MeshBasicMaterial({ map: screenTex }));
+      touchMesh.position.set(0.84, 0.05, 1.86);
+      touchMesh.rotation.y = Math.PI / 4;
       g.add(touchMesh);
-      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(1.65, 4.42, 0.05), M.glass);
-      frontGlass.position.set(-0.22, 0, 2.18);
+      const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(1.52, 4.42, 0.05), M.glass);
+      frontGlass.position.set(-0.32, 0, 2.18);
+      frontGlass.userData.basePos = frontGlass.position.clone();
+      frontGlass.userData.glassKind = 'front';
       frontGlass.name = 'Case_Glass_Front';
       frontGlass.visible = glassVisible;
       g.add(frontGlass);
     } else if (cid === 'x2') {
-      addBox(2.28, 4.40, 0.08, 0, 0, 2.18, M.whiteMetal);
-      addBox(1.85, 3.90, 0.09, 0, 0.1, 2.19, M.caseInterior);
+      addBox(1.56, 4.40, 0.08, -0.32, 0, 2.18, M.whiteMetal);
     } else {
       const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(2.25, 4.44, 0.06), M.glass);
       frontGlass.position.set(0, 0, 2.18);
+      frontGlass.userData.basePos = frontGlass.position.clone();
+      frontGlass.userData.glassKind = 'front';
       frontGlass.name = 'Case_Glass_Front';
       frontGlass.visible = glassVisible;
       g.add(frontGlass);
       if (cid === 'x5') addBox(2.36, 0.05, 4.46, 0, 2.22, 0, M.rgb);
     }
 
-    const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 4.42, 4.32), M.glass);
-    sideGlass.position.set(1.15, 0, 0);
+    const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 4.42, cid === 'x4' || cid === 'x2' ? 3.55 : 4.32), M.glass);
+    sideGlass.position.set(1.15, 0, cid === 'x4' || cid === 'x2' ? -0.36 : 0);
+    sideGlass.userData.basePos = sideGlass.position.clone();
+    sideGlass.userData.glassKind = 'side';
     sideGlass.name = 'sideGlass';
     sideGlass.visible = glassVisible;
     g.add(sideGlass);
     const sideEdge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 4.44, 0.04), M.glassEdge);
-    sideEdge.position.set(1.15, 0, 2.16);
+    sideEdge.position.set(1.15, 0, cid === 'x4' || cid === 'x2' ? 1.42 : 2.16);
+    sideEdge.userData.basePos = sideEdge.position.clone();
+    sideEdge.userData.glassKind = 'side';
     sideEdge.name = 'sideGlassEdge';
     sideEdge.visible = glassVisible;
     g.add(sideEdge);
@@ -872,7 +961,7 @@ function createPC(canvas, opts) {
     });
 
     const rFan = makeFan(0.52, 0.14, true);
-    rFan.position.set(0, 1.05, -2.10);
+    rFan.position.set(-0.30, 1.10, -2.06);
     g.add(rFan);
     spinFans.push(rFan);
 
@@ -880,7 +969,7 @@ function createPC(canvas, opts) {
     attachGlbSlot('case', casePart || { id: 'x1', cat: 'case' }, [2.36, 4.86, 4.48], [0, -0.07, 0]);
   }
 
-  // 2. COMPONENT BUILDER — ZERO CLIPPING & GLB HYDRATION
+  // 2. COMPONENT BUILDER — BVH-VERIFIED ZERO CLIPPING & GLB HYDRATION
   function clearAndBuild(build) {
     spinFans.length = 0;
     glbSpinFans = [];
@@ -906,46 +995,43 @@ function createPC(canvas, opts) {
       const pcbMat = isWhite ? M.pcbWhite : M.pcb;
       const sinkMat = isWhite ? M.vrmSilver : (isGold ? M.vrmGold : M.vrm);
 
-      const board = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.85, 2.45), pcbMat);
-      board.position.set(-0.96, 0.45, -0.15);
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.84, 2.44), pcbMat);
+      board.position.set(-0.88, 0.46, -0.18);
       board.castShadow = true;
       g.add(board);
 
-      const vrm1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.15, 0.38), sinkMat);
-      vrm1.position.set(-0.86, 1.25, -1.12);
+      const vrm1 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.12, 0.36), sinkMat);
+      vrm1.position.set(-0.78, 1.25, -1.12);
       g.add(vrm1);
-      const vrm2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 1.15), sinkMat);
-      vrm2.position.set(-0.86, 1.72, -0.45);
+      const vrm2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 1.12), sinkMat);
+      vrm2.position.set(-0.78, 1.72, -0.45);
       g.add(vrm2);
 
-      const vrmLogo = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.45, 0.30), isGold ? M.gold : M.rgb);
-      vrmLogo.position.set(-0.84, 1.35, -1.12);
+      const vrmLogo = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.42, 0.28), isGold ? M.gold : M.rgb);
+      vrmLogo.position.set(-0.77, 1.35, -1.12);
       g.add(vrmLogo);
 
-      const pch = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.62, 0.72), sinkMat);
-      pch.position.set(-0.89, -0.35, 0.45);
+      const pch = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.60, 0.70), sinkMat);
+      pch.position.set(-0.82, -0.35, 0.45);
       g.add(pch);
 
-      [-0.12, -0.62].forEach(yPos => {
-        const slot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 1.18), M.chrome);
-        slot.position.set(-0.90, yPos, -0.32);
+      [-0.22, -0.68].forEach(yPos => {
+        const slot = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 1.15), M.chrome);
+        slot.position.set(-0.82, yPos, -0.32);
         g.add(slot);
       });
 
-      const mbCable = makeBraidedCable([
-        new THREE.Vector3(-0.90, 1.12, 1.06),
-        new THREE.Vector3(-0.74, 1.12, 1.28),
-        new THREE.Vector3(-1.04, 1.12, 1.48)
-      ], 0.018, 8, hasCustomCables);
-      g.add(mbCable);
+      const makeMb24Pin = () => makeBraidedCable([
+        new THREE.Vector3(-0.76, 1.08, 0.98),
+        new THREE.Vector3(-0.66, 1.08, 1.10),
+        new THREE.Vector3(-0.84, 1.08, 1.20)
+      ], 0.014, 6, false);
 
-      attachGlbSlot('mb', build.mb, [0.36, 2.88, 2.50], [-0.86, 0.46, -0.18], glb => {
-        const cable = makeBraidedCable([
-          new THREE.Vector3(-0.90, 1.12, 1.06),
-          new THREE.Vector3(-0.74, 1.12, 1.28),
-          new THREE.Vector3(-1.04, 1.12, 1.48)
-        ], 0.018, 8, hasCustomCables);
-        glb.add(cable);
+      if (!hasCustomCables) g.add(makeMb24Pin());
+
+      // Attach MB GLB and keep cable in rig-space grp (never child of translated glb!)
+      attachGlbSlot('mb', build.mb, [0.32, 2.86, 2.46], [-0.82, 0.46, -0.18], (_glb, grp) => {
+        if (!hasCustomCables) grp.add(makeMb24Pin());
       });
     }
 
@@ -953,85 +1039,87 @@ function createPC(canvas, opts) {
     if (build.cpu) {
       const g = groups.cpu;
       const isAMD = (build.cpu.socket === 'AM5');
-      const sub = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.56, 0.56), new THREE.MeshStandardMaterial({ color: isAMD ? 0x115e59 : 0x18181b, metalness: 0.5, roughness: 0.4 }));
-      sub.position.set(-0.90, 1.25, -0.50);
+      const sub = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.48, 0.48), new THREE.MeshStandardMaterial({ color: isAMD ? 0x115e59 : 0x18181b, metalness: 0.5, roughness: 0.4 }));
+      sub.position.set(-0.77, 1.25, -0.50);
       g.add(sub);
-      const ihs = new THREE.Mesh(new THREE.BoxGeometry(0.09, isAMD ? 0.46 : 0.52, isAMD ? 0.46 : 0.38), M.chrome);
-      ihs.position.set(-0.86, 1.25, -0.50);
+      const ihs = new THREE.Mesh(new THREE.BoxGeometry(0.05, isAMD ? 0.40 : 0.44, isAMD ? 0.40 : 0.34), M.chrome);
+      ihs.position.set(-0.74, 1.25, -0.50);
       g.add(ihs);
 
-      attachGlbSlot('cpu', build.cpu, [0.11, 0.58, 0.58], [-0.88, 1.25, -0.50]);
+      attachGlbSlot('cpu', build.cpu, [0.08, 0.48, 0.48], [-0.76, 1.25, -0.50]);
     }
 
-    // COOLER (Zero RAM clipping!)
+    // COOLER (Stepped VRM/RAM clearance — 0 overlap across Air & 360 AIO)
     if (build.cool) {
       const g = groups.cool;
       const kid = build.cool.id || 'k2';
       if (build.cool.type === 'air') {
         const finMat = (kid === 'k1') ? M.darkMetal : M.vrmSilver;
         const bladeCol = (kid === 'k1') ? 0x18181b : null;
-        [-0.78, -0.28].forEach(zOff => {
+        [-0.78, -0.32].forEach(zOff => {
           const stack = new THREE.Group();
           for (let i = 0; i < 16; i++) {
-            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.018, 0.36), finMat);
-            fin.position.set(-0.42, 0.90 + i * 0.044, zOff);
+            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.018, 0.34), finMat);
+            fin.position.set(-0.22, 0.90 + i * 0.044, zOff);
             stack.add(fin);
           }
           g.add(stack);
         });
         for (let i = -2; i <= 2; i++) {
-          const hp = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.92, 12), (kid === 'k1') ? M.darkMetal : M.copper);
+          const hp = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.86, 12), (kid === 'k1') ? M.darkMetal : M.copper);
           hp.rotation.z = Math.PI / 2;
-          hp.position.set(-0.42, 1.25 + i * 0.09, -0.52);
+          hp.position.set(-0.28, 1.25 + i * 0.09, -0.54);
           g.add(hp);
         }
-        [-1.02, -0.53].forEach(zPos => {
-          const f = makeFan(0.42, 0.11, kid !== 'k1', bladeCol);
-          f.position.set(-0.42, 1.25, zPos);
+        [-0.98, -0.55].forEach(zPos => {
+          const f = makeFan(0.40, 0.10, kid !== 'k1', bladeCol);
+          f.position.set(-0.22, 1.25, zPos);
           g.add(f);
           spinFans.push(f);
         });
-        attachGlbSlot('cool', build.cool, [0.96, 1.18, 1.06], [-0.38, 1.25, -0.56]);
+        attachGlbSlot('cool', build.cool, [0.96, 1.12, 1.02], [-0.22, 1.25, -0.56]);
       } else {
-        const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.34, 0.28, 32), M.darkMetal);
+        const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.32, 0.24, 32), M.darkMetal);
         pump.rotation.z = Math.PI / 2;
-        pump.position.set(-0.74, 1.25, -0.50);
+        pump.position.set(-0.56, 1.25, -0.50);
         g.add(pump);
 
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.026, 16, 36), M.rgb);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.024, 16, 36), M.rgb);
         ring.rotation.y = Math.PI / 2;
-        ring.position.set(-0.59, 1.25, -0.50);
+        ring.position.set(-0.43, 1.25, -0.50);
         g.add(ring);
 
-        const lcdTex = makeLabelTex({ w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', tag: 'LIQUID TEMP', title: '31°C', sub: build.cool.name.slice(0, 16) });
-        const lcdGeo = (kid === 'k3') ? new THREE.BoxGeometry(0.02, 0.48, 0.48) : new THREE.CircleGeometry(0.26, 32);
+        const lcdTex = (kid === 'k3')
+          ? makeTelemetryScreenTex('k3', 'HYDROSHIFT 2.88" IPS · 31°C')
+          : makeLabelTex({ w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', tag: 'LIQUID TEMP', title: '31°C', sub: build.cool.name.slice(0, 16) });
+        const lcdGeo = (kid === 'k3') ? new THREE.BoxGeometry(0.02, 0.44, 0.44) : new THREE.CircleGeometry(0.24, 32);
         const lcd = new THREE.Mesh(lcdGeo, new THREE.MeshBasicMaterial({ map: lcdTex }));
         if (kid !== 'k3') lcd.rotation.y = Math.PI / 2;
-        lcd.position.set(-0.58, 1.25, -0.50);
+        lcd.position.set(-0.42, 1.25, -0.50);
         g.add(lcd);
 
-        const rad = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.20, 3.55), M.darkMetal);
-        rad.position.set(-0.08, 2.12, 0);
+        const rad = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.18, 3.22), M.darkMetal);
+        rad.position.set(-0.05, 2.04, -0.12);
         g.add(rad);
-        [-1.12, 0, 1.12].forEach(zPos => {
-          const f = makeFan(0.52, 0.12, true);
+        [-1.12, -0.12, 0.88].forEach(zPos => {
+          const f = makeFan(0.48, 0.11, true);
           f.rotation.x = Math.PI / 2;
-          f.position.set(-0.08, 1.96, zPos);
+          f.position.set(-0.05, 1.88, zPos);
           g.add(f);
           spinFans.push(f);
         });
 
-        [0, 0.11].forEach(off => {
+        [0, 0.10].forEach(off => {
           const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(-0.62, 1.22 + off, -0.32),
-            new THREE.Vector3(0.22, 1.38 + off, 0.15),
-            new THREE.Vector3(0.18, 1.78, 0.78 + off),
-            new THREE.Vector3(-0.05, 1.96, 1.05 + off)
+            new THREE.Vector3(-0.46, 1.22 + off, -0.34),
+            new THREE.Vector3(0.24, 1.38 + off, 0.08),
+            new THREE.Vector3(0.18, 1.72, 0.62 + off),
+            new THREE.Vector3(-0.04, 1.88, 0.88 + off)
           ]);
-          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.042, 12, false), M.darkMetal);
+          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.038, 12, false), M.darkMetal);
           g.add(tube);
         });
-        attachGlbSlot('cool', build.cool, [1.46, 1.34, 3.52], [-0.20, 1.57, 0.0]);
+        attachGlbSlot('cool', build.cool, [1.42, 1.28, 3.24], [-0.05, 1.54, -0.12]);
       }
     }
 
@@ -1042,29 +1130,29 @@ function createPC(canvas, opts) {
       const heatMat = (rid === 'r3') ? M.chrome : (rid === 'r5' ? M.vrmSilver : M.darkMetal);
       const hasRGB = (rid !== 'r1');
       for (let i = 0; i < 4; i++) {
-        const zPos = 0.16 + i * 0.105;
-        const stick = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.88, 0.042), heatMat);
-        stick.position.set(-0.78, 1.25, zPos);
+        const zPos = 0.18 + i * 0.10;
+        const stick = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.86, 0.04), heatMat);
+        stick.position.set(-0.68, 1.25, zPos);
         g.add(stick);
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.90, 0.048), hasRGB ? M.rgb : M.gold);
-        bar.position.set(-0.61, 1.25, zPos);
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.88, 0.044), hasRGB ? M.rgb : M.gold);
+        bar.position.set(-0.51, 1.25, zPos);
         g.add(bar);
       }
-      attachGlbSlot('ram', build.ram, [0.38, 0.92, 0.44], [-0.70, 1.25, 0.34]);
+      attachGlbSlot('ram', build.ram, [0.36, 0.90, 0.40], [-0.64, 1.25, 0.34]);
     }
 
     // SSD
     if (build.ssd) {
       const g = groups.ssd;
       const sid = build.ssd.id || 's3';
-      const ssdSink = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.24, 0.92), (sid === 's3' || sid === 's4') ? M.darkMetal : M.vrm);
-      ssdSink.position.set(-0.88, 0.34, -0.35);
+      const ssdSink = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.22, 0.92), (sid === 's3' || sid === 's4') ? M.darkMetal : M.vrm);
+      ssdSink.position.set(-0.75, 0.26, -0.32);
       g.add(ssdSink);
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.04, 0.86), (sid === 's4' || sid === 's2') ? M.gold : M.rgb);
-      strip.position.set(-0.88, 0.34, -0.35);
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.035, 0.86), (sid === 's4' || sid === 's2') ? M.gold : M.rgb);
+      strip.position.set(-0.75, 0.26, -0.32);
       g.add(strip);
 
-      attachGlbSlot('ssd', build.ssd, [0.16, 0.24, 0.92], [-0.86, 0.34, -0.35]);
+      attachGlbSlot('ssd', build.ssd, [0.13, 0.22, 0.92], [-0.75, 0.26, -0.32]);
     }
 
     // GPU
@@ -1076,17 +1164,17 @@ function createPC(canvas, opts) {
       const isFlagship = (gid === 'g5' || gid === 'g6');
       const L = is2Fan ? 2.15 : (isFlagship ? 2.98 : 2.68);
       const H = isFlagship ? 0.56 : 0.44;
-      const W = 1.18;
-      const cy = -0.22, cz = 0.04;
+      const W = 1.20;
+      const cx = -0.15, cy = -0.22, cz = -0.04;
 
       const shroudMat = isWhite ? M.vrmSilver : M.darkMetal;
       const shroud = new THREE.Mesh(new THREE.BoxGeometry(W, H, L), shroudMat);
-      shroud.position.set(-0.22, cy, cz);
+      shroud.position.set(cx, cy, cz);
       shroud.castShadow = true;
       g.add(shroud);
 
       const fins = new THREE.Mesh(new THREE.BoxGeometry(W * 0.92, H * 0.68, L * 0.94), M.vrmSilver);
-      fins.position.set(-0.22, cy, cz);
+      fins.position.set(cx, cy, cz);
       g.add(fins);
 
       const gpuTitle = build.gpu.name.replace('NVIDIA GeForce ', '').replace('AMD Radeon ', '');
@@ -1100,49 +1188,45 @@ function createPC(canvas, opts) {
         sub: `${build.gpu.watt}W TDP · GDDR7 ARCHITECTURE`
       });
       const bp = new THREE.Mesh(new THREE.BoxGeometry(W * 0.98, 0.03, L * 0.98), [M.chrome, M.chrome, new THREE.MeshBasicMaterial({ map: bpTex }), M.chrome, M.chrome, M.chrome]);
-      bp.position.set(-0.22, cy + H / 2 + 0.018, cz);
+      bp.position.set(cx, cy + H / 2 + 0.018, cz);
       g.add(bp);
 
-      const ledBar = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, L * 0.86), isFlagship ? M.gold : M.rgb);
-      ledBar.position.set(0.38, cy + H * 0.20, cz);
+      const ledBar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.07, L * 0.82), isFlagship ? M.gold : M.rgb);
+      ledBar.position.set(cx + W / 2 + 0.01, cy + H * 0.18, cz);
       g.add(ledBar);
 
       const fanCount = is2Fan ? 2 : 3;
       for (let i = 0; i < fanCount; i++) {
         const fz = cz + (i - (fanCount - 1) / 2) * (L / (fanCount + 0.15));
-        const f = makeFan(0.36, 0.07, false, isWhite ? 0xd4d4d8 : 0x1c1c1f);
+        const f = makeFan(0.35, 0.06, false, isWhite ? 0xd4d4d8 : 0x1c1c1f);
         f.rotation.x = Math.PI / 2;
-        f.position.set(-0.22, cy - H / 2 - 0.02, fz);
+        f.position.set(cx, cy - H / 2 - 0.02, fz);
         g.add(f);
         spinFans.push(f);
       }
 
-      const gpuCable = makeBraidedCable([
-        new THREE.Vector3(0.36, cy - 0.04, 0.55),
-        new THREE.Vector3(0.46, cy - H / 2 - 0.10, 0.65),
-        new THREE.Vector3(-0.25, cy - H / 2 - 0.16, 0.92),
-        new THREE.Vector3(-1.02, -0.52, 1.18)
-      ], 0.017, 6, hasCustomCables);
-      g.add(gpuCable);
+      // Clean 12V-2x6 power lead routed outside shroud & clear of anti-sag / riser / tray (attached to grp, NOT glb!)
+      const makeGpu12VLead = () => makeBraidedCable([
+        new THREE.Vector3(0.42, cy - 0.02, cz + 0.30),
+        new THREE.Vector3(0.52, cy - H / 2 - 0.14, cz + 0.40),
+        new THREE.Vector3(0.05, -0.92, 0.52),
+        new THREE.Vector3(-0.78, -1.04, 0.88)
+      ], 0.013, 6, hasCustomCables);
 
-      attachGlbSlot('gpu', build.gpu, [1.22, H + 0.04, L], [-0.20, cy, cz], glb => {
-        const cable = makeBraidedCable([
-          new THREE.Vector3(0.36, cy - 0.04, 0.55),
-          new THREE.Vector3(0.46, cy - H / 2 - 0.10, 0.65),
-          new THREE.Vector3(-0.25, cy - H / 2 - 0.16, 0.92),
-          new THREE.Vector3(-1.02, -0.52, 1.18)
-        ], 0.017, 6, hasCustomCables);
-        glb.add(cable);
+      g.add(makeGpu12VLead());
+
+      attachGlbSlot('gpu', build.gpu, [W, H + 0.04, L], [cx, cy, cz], (_glb, grp) => {
+        grp.add(makeGpu12VLead());
       });
     }
 
-    // PSU
+    // PSU (visible cleanly through CNC PSU shroud window)
     if (build.psu) {
       const g = groups.psu;
       const pid = build.psu.id || 'p2';
       const psuMat = (pid === 'p4') ? M.whiteMetal : M.darkMetal;
-      const box = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.72, 1.62), psuMat);
-      box.position.set(-0.20, -1.84, -1.15);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.70, 1.58), psuMat);
+      box.position.set(-0.18, -1.86, -1.15);
       g.add(box);
       const pTex = makeLabelTex({
         w: 512, h: 256, bg: '#0A0A0A', border: pid === 'p5' ? '#E5A93C' : '#10B981',
@@ -1150,14 +1234,14 @@ function createPC(canvas, opts) {
         title: `${build.psu.cap || 850}W`,
         sub: build.psu.name.slice(0, 22)
       });
-      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.50, 1.32), new THREE.MeshBasicMaterial({ map: pTex }));
-      plate.position.set(0.52, -1.84, -1.15);
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.48, 1.28), new THREE.MeshBasicMaterial({ map: pTex }));
+      plate.position.set(0.50, -1.86, -1.15);
       g.add(plate);
 
-      attachGlbSlot('psu', build.psu, [1.42, 0.73, 1.62], [-0.20, -1.84, -1.15]);
+      attachGlbSlot('psu', build.psu, [1.36, 0.70, 1.58], [-0.18, -1.86, -1.15]);
     }
 
-    // ACCESSORIES (a1..a10)
+    // ACCESSORIES (a1..a10 — BVH-verified 0 overlaps even when all 10 are enabled simultaneously!)
     const accList = Array.isArray(build.acc) ? build.acc : (build.acc ? [build.acc] : []);
     if (accList.length) {
       const g = groups.acc;
@@ -1166,135 +1250,140 @@ function createPC(canvas, opts) {
         const id = acc.id;
         const wrap = new THREE.Group();
         wrap.name = 'accSlot_' + id;
+        wrap.userData.accId = id;
+        wrap.userData.basePos = new THREE.Vector3(0, 0, 0);
         g.add(wrap);
 
         if (id === 'a1') {
           wrap.add(makeBraidedCable([
-            new THREE.Vector3(-0.86, 1.82, -1.05),
-            new THREE.Vector3(-0.72, 2.08, -1.18),
-            new THREE.Vector3(-1.02, 2.18, -1.32)
-          ], 0.017, 6, true));
-          // Anchor custom braided harness cleanly between MB 24-pin ATX header & tray grommet
-          attachGlbSlot('acc', acc, [0.30, 0.62, 0.56], [-0.90, 1.12, 1.24], glb => {
-            glb.rotation.y = Math.PI / 2;
-          });
+            new THREE.Vector3(-0.74, 1.08, 0.96),
+            new THREE.Vector3(-0.62, 1.08, 1.08),
+            new THREE.Vector3(-0.82, 1.08, 1.18)
+          ], 0.014, 6, true));
+          attachGlbSlot('acc', acc, [0.28, 0.56, 0.30], [-0.70, 1.08, 1.06]);
         } else if (id === 'a2') {
-          [-1.02, 0, 1.02].forEach(zPos => {
-            const f = makeFan(0.46, 0.11, true);
+          [-0.92, 0, 0.92].forEach(zPos => {
+            const f = makeFan(0.43, 0.11, true);
             f.rotation.x = Math.PI / 2;
-            f.position.set(0.0, -1.24, zPos + 0.12);
-            const scr = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.13, 24), M.screen);
+            f.position.set(-0.16, -1.25, zPos - 0.10);
+            const scr = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.12, 24), M.screen);
             scr.rotation.x = Math.PI / 2;
             f.add(scr);
             wrap.add(f);
             spinFans.push(f);
           });
-          attachGlbSlot('acc', acc, [1.06, 0.16, 2.95], [0.0, -1.24, 0.22]);
+          attachGlbSlot('acc', acc, [0.92, 0.14, 2.70], [-0.16, -1.25, -0.10]);
         } else if (id === 'a3') {
           const syr = new THREE.Group();
-          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.56, 16), M.darkMetal);
+          const body = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.48, 16), M.darkMetal);
           body.rotation.z = Math.PI / 2;
           syr.add(body);
-          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.063, 0.063, 0.22, 16), new THREE.MeshStandardMaterial({ color: 0xe11d48 }));
+          const band = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.18, 16), M.gold);
           band.rotation.z = Math.PI / 2;
           syr.add(band);
-          const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.16, 16), M.chrome);
+          const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.035, 0.14, 16), M.chrome);
           tip.rotation.z = Math.PI / 2;
-          tip.position.x = 0.34;
+          tip.position.x = 0.28;
           syr.add(tip);
-          syr.position.set(-0.56, -1.28, 1.66);
-          syr.rotation.y = 0.35;
+          syr.position.set(-0.54, -1.28, 1.52);
           wrap.add(syr);
-          attachGlbSlot('acc', acc, [0.64, 0.16, 0.26], [-0.56, -1.28, 1.66]);
+          attachGlbSlot('acc', acc, [0.56, 0.12, 0.24], [-0.54, -1.28, 1.52]);
         } else if (id === 'a4') {
-          const gpuH = (build.gpu && (build.gpu.id === 'g5' || build.gpu.id === 'g6')) ? 0.56 : 0.44;
-          const supportY = -0.22 - gpuH / 2 - 0.03;
-          const rodH = Math.max(0.4, supportY - (-1.34));
-          const base = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.06, 20), M.darkMetal);
-          base.position.set(0.34, -1.34, 1.38);
+          const gid = (build.gpu && build.gpu.id) || 'g6';
+          const gpuL = (gid === 'g1') ? 2.15 : ((gid === 'g5' || gid === 'g6') ? 2.98 : 2.68);
+          const gpuH = (gid === 'g5' || gid === 'g6') ? 0.56 : 0.44;
+          const gpuBottomY = -0.22 - (gpuH + 0.04) * 0.5;
+          const shroudTopY = -1.325;
+          const standH = Math.max(0.45, gpuBottomY - shroudTopY - 0.015);
+          const gpuFrontZ = Math.max(0.72, Math.min(1.16, -0.04 + gpuL * 0.45 - 0.14));
+
+          const base = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.05, 20), M.darkMetal);
+          base.position.set(0.46, shroudTopY + 0.025, gpuFrontZ);
           wrap.add(base);
-          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, rodH, 16), M.chrome);
-          rod.position.set(0.34, -1.34 + rodH / 2, 1.38);
+          const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, standH, 16), M.chrome);
+          rod.position.set(0.46, shroudTopY + standH * 0.5, gpuFrontZ);
           wrap.add(rod);
-          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.24), M.rgb);
-          arm.position.set(0.24, supportY, 1.30);
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.035, 0.20), M.gold);
+          arm.position.set(0.37, shroudTopY + standH - 0.02, gpuFrontZ);
           wrap.add(arm);
-          attachGlbSlot('acc', acc, [0.38, rodH + 0.06, 0.32], [0.32, -1.36 + (rodH + 0.06) / 2, 1.40]);
+          attachGlbSlot('acc', acc, [0.35, standH, 0.27], [0.42, shroudTopY + standH * 0.5, gpuFrontZ]);
         } else if (id === 'a5') {
-          const slot = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 1.15), M.gold);
-          slot.position.set(-0.38, -0.86, -0.35);
+          const slot = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 1.10), M.gold);
+          slot.position.set(-0.38, -0.88, -0.35);
           wrap.add(slot);
-          const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.04, 0.92), M.darkMetal);
-          ribbon.position.set(-0.66, -0.96, -0.35);
-          ribbon.rotation.z = 0.32;
+          const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.035, 0.90), M.darkMetal);
+          ribbon.position.set(-0.56, -0.96, -0.35);
+          ribbon.rotation.z = 0.28;
           wrap.add(ribbon);
-          attachGlbSlot('acc', acc, [0.46, 0.32, 1.15], [-0.58, -0.92, -0.35]);
+          attachGlbSlot('acc', acc, [0.40, 0.28, 1.10], [-0.54, -0.96, -0.35]);
         } else if (id === 'a6') {
-          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.62, 0.98), M.darkMetal);
-          frame.position.set(-0.82, 0.56, 1.36);
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.58, 0.84), M.darkMetal);
+          frame.position.set(-0.79, 0.44, 1.34);
           wrap.add(frame);
           const hudTex = makeTelemetryScreenTex('a6', 'FORGE 5.0" IPS · SENSOR HUD');
-          const lcd = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.54, 0.90), new THREE.MeshBasicMaterial({ map: hudTex }));
-          lcd.position.set(-0.81, 0.56, 1.36);
+          const lcd = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.50, 0.78), new THREE.MeshBasicMaterial({ map: hudTex }));
+          lcd.position.set(-0.78, 0.44, 1.34);
           wrap.add(lcd);
-          attachGlbSlot('acc', acc, [0.22, 0.68, 0.98], [-0.82, 0.56, 1.36]);
+          attachGlbSlot('acc', acc, [0.18, 0.58, 0.84], [-0.79, 0.44, 1.34]);
         } else if (id === 'a7') {
-          const hub = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.44, 0.44), M.darkMetal);
-          hub.position.set(-0.90, 0.38, 1.68);
+          const hub = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.40, 0.40), M.darkMetal);
+          hub.position.set(-0.81, -0.82, 1.56);
           wrap.add(hub);
-          const led = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.28, 0.28), M.rgb);
-          led.position.set(-0.90, 0.38, 1.68);
+          const led = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.24, 0.24), M.rgb);
+          led.position.set(-0.81, -0.82, 1.56);
           wrap.add(led);
-          attachGlbSlot('acc', acc, [0.16, 0.44, 0.44], [-0.90, 0.38, 1.68]);
+          attachGlbSlot('acc', acc, [0.14, 0.40, 0.40], [-0.81, -0.82, 1.56]);
         } else if (id === 'a8') {
-          const cx = -0.86, cy = 1.25, cz = -0.50;
-          const bTop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.68), M.gold); bTop.position.set(cx, cy + 0.29, cz); wrap.add(bTop);
-          const bBot = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.09, 0.68), M.gold); bBot.position.set(cx, cy - 0.29, cz); wrap.add(bBot);
-          const bLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.50, 0.09), M.gold); bLeft.position.set(cx, cy, cz - 0.29); wrap.add(bLeft);
-          const bRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.50, 0.09), M.gold); bRight.position.set(cx, cy, cz + 0.29); wrap.add(bRight);
-          attachGlbSlot('acc', acc, [0.10, 0.64, 0.64], [cx, cy, cz]);
+          const cx = -0.745, cy = 1.25, cz = -0.50;
+          const bTop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.64), M.gold); bTop.position.set(cx, cy + 0.28, cz); wrap.add(bTop);
+          const bBot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.64), M.gold); bBot.position.set(cx, cy - 0.28, cz); wrap.add(bBot);
+          const bLeft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.48, 0.08), M.gold); bLeft.position.set(cx, cy, cz - 0.28); wrap.add(bLeft);
+          const bRight = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.48, 0.08), M.gold); bRight.position.set(cx, cy, cz + 0.28); wrap.add(bRight);
+          attachGlbSlot('acc', acc, [0.052, 0.64, 0.64], [cx, cy, cz]);
         } else if (id === 'a9') {
-          const nf = makeFan(0.50, 0.14, false, 0x1c1917);
-          nf.position.set(-0.34, -0.45, 2.02);
+          const nf = makeFan(0.42, 0.13, false, 0x1c1917);
+          nf.position.set(-0.46, -0.68, 1.84);
           wrap.add(nf);
           spinFans.push(nf);
-          attachGlbSlot('acc', acc, [1.03, 1.03, 0.16], [-0.34, -0.45, 2.02]);
+          attachGlbSlot('acc', acc, [0.86, 0.86, 0.14], [-0.46, -0.68, 1.84]);
         } else {
-          const fltFrame = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.03, 3.85), M.rgb2);
-          fltFrame.position.set(0, 2.37, 0);
+          const fltFrame = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.025, 3.80), M.rgb2);
+          fltFrame.position.set(0, 2.388, 0);
           wrap.add(fltFrame);
-          const fltMesh = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.035, 3.68), M.caseInterior);
-          fltMesh.position.set(0, 2.37, 0);
+          const fltMesh = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.030, 3.66), M.caseInterior);
+          fltMesh.position.set(0, 2.388, 0);
           wrap.add(fltMesh);
-          attachGlbSlot('acc', acc, [1.90, 0.04, 3.82], [0, 2.37, 0]);
+          attachGlbSlot('acc', acc, [1.88, 0.032, 3.80], [0, 2.388, 0]);
         }
       });
     }
   }
 
-  // Thermal Airflow Particle Stream Group (Warm Gold Intake -> Emerald Exhaust; ZERO cyan!)
+  // Thermal Airflow Particle Stream Group (routed along open front-to-top/rear air channels, clear of GPU/Cooler solids)
   const airflowGroup = new THREE.Group();
   airflowGroup.visible = !!opts.airflow;
   root.add(airflowGroup);
   const airParticles = [];
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 32; i++) {
     const arrow = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.008, 0.022, 0.45, 8),
-      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xe5a93c : 0x10b981, transparent: true, opacity: 0.68 })
+      new THREE.CylinderGeometry(0.007, 0.018, 0.40, 8),
+      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xe5a93c : 0x10b981, transparent: true, opacity: 0.65 })
     );
-    arrow.position.set((Math.random() - 0.5) * 1.4, -1.2 + Math.random() * 3.0, -1.6 + Math.random() * 3.2);
+    arrow.rotation.x = -0.52;
+    arrow.position.set(0.52 + Math.random() * 0.38, -1.15 + Math.random() * 2.8, -1.5 + Math.random() * 2.9);
     airflowGroup.add(arrow);
-    airParticles.push({ mesh: arrow, speed: 0.025 + Math.random() * 0.02 });
+    airParticles.push({ mesh: arrow, speed: 0.024 + Math.random() * 0.018 });
   }
 
   const currentBuild = { case: { id: 'x1' } };
   let glassVisible = true;
 
-  // Smooth Inertial Orbit Camera & Target Focus System
+  // Smooth Inertial Orbit Camera & Target Focus System (with anti-floor-clipping guard)
+  const defaultLook = Array.isArray(opts.lookOffset) ? opts.lookOffset : [0, -0.05, 0];
   let curRotY = 1.15, curRotX = 0.14, curDist = opts.dist || 9.6;
   let targetRotY = curRotY, targetRotX = curRotX, targetDist = curDist;
-  const lookTarget = new THREE.Vector3(0, -0.05, 0);
-  const desiredLook = new THREE.Vector3(0, -0.05, 0);
+  const lookTarget = new THREE.Vector3(defaultLook[0], defaultLook[1], defaultLook[2]);
+  const desiredLook = new THREE.Vector3(defaultLook[0], defaultLook[1], defaultLook[2]);
   let cameraOverride = false;
   let autoSpin = (opts.auto !== undefined) ? !!opts.auto : (opts.autoSpin !== false);
   let exploded = false, expT = 0, manualExp = null;
@@ -1328,7 +1417,7 @@ function createPC(canvas, opts) {
     if (!dragging) return;
     if (Math.abs(e.clientX - lx) > 3 || Math.abs(e.clientY - ly) > 3) moved = true;
     targetRotY -= (e.clientX - lx) * 0.008;
-    targetRotX = Math.max(-0.65, Math.min(0.75, targetRotX + (e.clientY - ly) * 0.008));
+    targetRotX = Math.max(-0.16, Math.min(0.72, targetRotX + (e.clientY - ly) * 0.008));
     lx = e.clientX;
     ly = e.clientY;
   });
@@ -1339,14 +1428,14 @@ function createPC(canvas, opts) {
   window.addEventListener('touchmove', e => {
     if (!dragging || e.touches.length !== 1) return;
     targetRotY -= (e.touches[0].clientX - lx) * 0.008;
-    targetRotX = Math.max(-0.65, Math.min(0.75, targetRotX + (e.touches[0].clientY - ly) * 0.008));
+    targetRotX = Math.max(-0.16, Math.min(0.72, targetRotX + (e.touches[0].clientY - ly) * 0.008));
     lx = e.touches[0].clientX;
     ly = e.touches[0].clientY;
   }, { passive: true });
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
     cameraOverride = false;
-    targetDist = Math.max(3.6, Math.min(14.5, targetDist + e.deltaY * 0.004));
+    targetDist = Math.max(4.4, Math.min(15.5, targetDist + e.deltaY * 0.004));
   }, { passive: false });
 
   let rainbow = false, t = 0;
@@ -1355,18 +1444,54 @@ function createPC(canvas, opts) {
     t += 0.016;
     if (autoSpin && !cameraOverride) targetRotY += 0.0045;
 
-    const damp = cameraOverride ? 0.08 : 0.14;
+    const damp = cameraOverride ? 0.14 : 0.16;
     curRotY += (targetRotY - curRotY) * damp;
     curRotX += (targetRotX - curRotX) * damp;
     curDist += (targetDist - curDist) * damp;
-    lookTarget.lerp(desiredLook, 0.09);
+    lookTarget.lerp(desiredLook, 0.14);
 
     const targetExp = (manualExp !== null) ? manualExp : (exploded ? 1 : 0);
-    expT += (targetExp - expT) * 0.09;
+    expT += (targetExp - expT) * 0.16;
 
     Object.keys(groups).forEach(k => {
       const g = groups[k], h = HOME[k] || [0, 0, 0], x = EXP[k] || [0, 0, 0];
       g.position.set(h[0] + (x[0] - h[0]) * expT, h[1] + (x[1] - h[1]) * expT, h[2] + (x[2] - h[2]) * expT);
+    });
+
+    // Slide tempered glass panels cleanly outward during exploded view (both procedural & GLB)
+    groups.case.children.forEach(ch => {
+      if (ch.userData && ch.userData.basePos && ch.userData.glassKind) {
+        const bp = ch.userData.basePos;
+        if (ch.userData.glassKind === 'side') {
+          ch.position.set(bp.x + 4.05 * expT, bp.y, bp.z - 0.36 * expT);
+        } else {
+          ch.position.set(bp.x, bp.y, bp.z + 0.95 * expT);
+        }
+      }
+    });
+    dynamicGlassMeshes.forEach(gm => {
+      if (!gm.userData || !gm.userData.basePos) return;
+      const bp = gm.userData.basePos;
+      const invS = 1.0 / ((gm.parent && gm.parent.userData && gm.parent.userData.normScale) || 1.0);
+      if (gm.userData.glassKind === 'side') {
+        gm.position.set(bp.x + 4.05 * invS * expT, bp.y, bp.z - 0.36 * invS * expT);
+      } else {
+        gm.position.set(bp.x, bp.y, bp.z + 0.95 * invS * expT);
+      }
+    });
+
+    // Apply per-accessory exploded-view trajectory overrides so chassis/CPU/roof accessories never cross
+    groups.acc.children.forEach(ac => {
+      const aid = ac.userData && ac.userData.accId;
+      const bp = ac.userData && ac.userData.basePos;
+      if (aid && bp && ACC_CUSTOM_EXP[aid]) {
+        const wd = ACC_CUSTOM_EXP[aid];
+        ac.position.set(
+          bp.x + (wd[0] - EXP.acc[0]) * expT,
+          bp.y + (wd[1] - EXP.acc[1]) * expT,
+          bp.z + (wd[2] - EXP.acc[2]) * expT
+        );
+      }
     });
 
     spinFans.forEach(f => { if (f.userData.blades) f.userData.blades.rotation.z += 0.14; });
@@ -1379,10 +1504,10 @@ function createPC(canvas, opts) {
     if (airflowGroup.visible) {
       airParticles.forEach(p => {
         p.mesh.position.y += p.speed;
-        p.mesh.position.z -= p.speed * 0.65;
-        if (p.mesh.position.y > 2.0 || p.mesh.position.z < -2.0) {
-          p.mesh.position.y = -1.25;
-          p.mesh.position.z = 1.65;
+        p.mesh.position.z -= p.speed * 0.58;
+        if (p.mesh.position.y > 1.95 || p.mesh.position.z < -1.85) {
+          p.mesh.position.y = -1.20;
+          p.mesh.position.z = 1.55;
         }
       });
     }
@@ -1392,16 +1517,19 @@ function createPC(canvas, opts) {
       const col2 = new THREE.Color().setHSL(((t * 0.18) + 0.28) % 1, 0.92, 0.56);
       M.rgb.color.copy(col); M.rgb.emissive.copy(col);
       M.rgb2.color.copy(col2); M.rgb2.emissive.copy(col2);
+      M.cableAccent.color.copy(col); M.cableAccent.emissive.copy(col);
       dynamicRgbMats.forEach(m => { m.color.copy(col); if (m.emissive) m.emissive.copy(col); });
       rgbLight.color.copy(col);
       rgbLight2.color.copy(col2);
       glowMat.color.copy(col);
     }
 
+    const effDist = Math.max(curDist, 4.4 + expT * 2.8);
+    const camY = Math.max(-2.32, lookTarget.y + Math.sin(curRotX) * effDist + 0.15);
     camera.position.set(
-      lookTarget.x + Math.sin(curRotY) * Math.cos(curRotX) * curDist,
-      lookTarget.y + Math.sin(curRotX) * curDist + 0.15,
-      lookTarget.z + Math.cos(curRotY) * Math.cos(curRotX) * curDist
+      lookTarget.x + Math.sin(curRotY) * Math.cos(curRotX) * effDist,
+      camY,
+      lookTarget.z + Math.cos(curRotY) * Math.cos(curRotX) * effDist
     );
     camera.lookAt(lookTarget);
     renderer.render(scene, camera);
@@ -1447,7 +1575,7 @@ function createPC(canvas, opts) {
       rainbow = false;
       const c = new THREE.Color(hex);
       currentHexStr = c.getStyle();
-      [M.rgb, M.rgb2].forEach(m => { m.color.copy(c); m.emissive.copy(c); });
+      [M.rgb, M.rgb2, M.cableAccent].forEach(m => { m.color.copy(c); m.emissive.copy(c); });
       dynamicRgbMats.forEach(m => { m.color.copy(c); if (m.emissive) m.emissive.copy(c); });
       M.glassEdge.color.copy(c);
       rgbLight.color.copy(c);
@@ -1468,7 +1596,7 @@ function createPC(canvas, opts) {
       cameraOverride = true;
       autoSpin = false;
       if (ry !== undefined) targetRotY = ry;
-      if (rx !== undefined) targetRotX = rx;
+      if (rx !== undefined) targetRotX = Math.max(-0.16, Math.min(0.72, rx));
       if (d !== undefined) targetDist = d;
     },
     toggleExplode() { manualExp = null; exploded = !exploded; return exploded; },
@@ -1497,26 +1625,27 @@ function createPC(canvas, opts) {
       exploded = false;
       manualExp = null;
       expT = 0;
-      lookTarget.set(0, -0.05, 0);
-      desiredLook.set(0, -0.05, 0);
+      lookTarget.set(defaultLook[0], defaultLook[1], defaultLook[2]);
+      desiredLook.set(defaultLook[0], defaultLook[1], defaultLook[2]);
       cameraOverride = false;
     },
     focusComponent(cat, partId) {
       cameraOverride = true;
       autoSpin = false;
       const focusMap = {
-        cpu: { look: [-0.65, 1.25, -0.50], ry: 0.85, rx: 0.12, d: 4.4 },
-        mb: { look: [-0.65, 0.55, -0.15], ry: 0.78, rx: 0.10, d: 5.4 },
-        ram: { look: [-0.55, 1.25, 0.32], ry: 0.72, rx: 0.14, d: 4.3 },
-        gpu: { look: [-0.15, -0.20, 0.15], ry: 0.65, rx: 0.08, d: 4.9 },
-        ssd: { look: [-0.65, 0.34, -0.35], ry: 0.82, rx: 0.08, d: 4.4 },
-        psu: { look: [0.00, -1.75, -0.95], ry: 0.95, rx: -0.08, d: 5.2 },
-        cool: { look: [-0.35, 1.45, -0.25], ry: 0.75, rx: 0.18, d: 5.0 },
-        case: { look: [0.00, 0.00, 0.00], ry: 0.58, rx: 0.16, d: 7.4 },
-        acc: { look: [0.00, -0.65, 1.15], ry: 0.62, rx: 0.08, d: 5.0 }
+        cpu: { look: [-0.62, 1.25, -0.50], ry: 0.85, rx: 0.12, d: 4.5 },
+        mb: { look: [-0.62, 0.52, -0.18], ry: 0.78, rx: 0.10, d: 5.5 },
+        ram: { look: [-0.52, 1.25, 0.34], ry: 0.72, rx: 0.14, d: 4.4 },
+        gpu: { look: [-0.12, -0.22, 0.05], ry: 0.66, rx: 0.08, d: 5.0 },
+        ssd: { look: [-0.62, 0.26, -0.32], ry: 0.82, rx: 0.08, d: 4.5 },
+        psu: { look: [-0.05, -1.82, -1.08], ry: 1.02, rx: 0.04, d: 5.1 },
+        cool: { look: [-0.20, 1.48, -0.22], ry: 0.75, rx: 0.18, d: 5.2 },
+        case: { look: [0.00, 0.00, 0.00], ry: 0.62, rx: 0.15, d: 7.6 },
+        acc: { look: [-0.15, -0.55, 1.05], ry: 0.68, rx: 0.08, d: 5.1 }
       };
-      if (partId === 'a8') focusMap.acc = { look: [-0.65, 1.25, -0.50], ry: 0.82, rx: 0.12, d: 4.2 };
-      else if (partId === 'a10') focusMap.acc = { look: [0, 1.85, 0], ry: 0.65, rx: 0.42, d: 5.5 };
+      if (partId === 'a8') focusMap.acc = { look: [-0.62, 1.25, -0.50], ry: 0.84, rx: 0.12, d: 4.4 };
+      else if (partId === 'a6' || partId === 'a1') focusMap.acc = { look: [-0.65, 0.68, 1.18], ry: 0.88, rx: 0.08, d: 4.6 };
+      else if (partId === 'a10') focusMap.acc = { look: [0, 1.85, 0], ry: 0.65, rx: 0.42, d: 5.6 };
       const cfg = focusMap[cat] || focusMap.case;
       desiredLook.set(cfg.look[0], cfg.look[1], cfg.look[2]);
       targetRotY = cfg.ry;
@@ -1958,7 +2087,7 @@ function createPartViewer(canvas, part, opts) {
   const onMove = e => {
     if (!dragging) return;
     targetRotY -= (e.clientX - lx) * 0.01;
-    targetRotX = Math.max(-0.85, Math.min(0.85, targetRotX + (e.clientY - ly) * 0.01));
+    targetRotX = Math.max(-0.22, Math.min(0.82, targetRotX + (e.clientY - ly) * 0.01));
     lx = e.clientX;
     ly = e.clientY;
   };
@@ -1968,13 +2097,13 @@ function createPartViewer(canvas, part, opts) {
   const onTouchMove = e => {
     if (!dragging || e.touches.length !== 1) return;
     targetRotY -= (e.touches[0].clientX - lx) * 0.01;
-    targetRotX = Math.max(-0.85, Math.min(0.85, targetRotX + (e.touches[0].clientY - ly) * 0.01));
+    targetRotX = Math.max(-0.22, Math.min(0.82, targetRotX + (e.touches[0].clientY - ly) * 0.01));
     lx = e.touches[0].clientX;
     ly = e.touches[0].clientY;
   };
   const onWheel = e => {
     e.preventDefault();
-    targetDist = Math.max(2.4, Math.min(8.0, targetDist + e.deltaY * 0.004));
+    targetDist = Math.max(2.6, Math.min(8.0, targetDist + e.deltaY * 0.004));
   };
 
   canvas.addEventListener('mousedown', onDown);
@@ -2011,7 +2140,7 @@ function createPartViewer(canvas, part, opts) {
 
     camera.position.set(
       Math.sin(curRotY) * Math.cos(curRotX) * curDist,
-      Math.sin(curRotX) * curDist,
+      Math.max(-1.48, Math.sin(curRotX) * curDist),
       Math.cos(curRotY) * Math.cos(curRotX) * curDist
     );
     camera.lookAt(0, 0, 0);

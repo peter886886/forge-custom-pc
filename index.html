@@ -330,7 +330,7 @@
   const initTheme=(typeof getTheme==='function')?getTheme():{id:'titanium',hex:'#E5A93C'};
   const hero=createPC(document.getElementById('heroCanvas'),{auto:true,airflow:true,dist:13.2,rgb:initTheme.hex});
   PREBUILT[1].parts.forEach(id=>hero.set(byId(id).cat,byId(id),false));
-  const anat=createPC(document.getElementById('anatomyCanvas'),{auto:false,airflow:false,dist:10.2,rgb:initTheme.hex});
+  const anat=createPC(document.getElementById('anatomyCanvas'),{auto:false,airflow:false,dist:10.4,lookOffset:[0.32,-0.05,0],rgb:initTheme.hex});
   PREBUILT[2].parts.forEach(id=>anat.set(byId(id).cat,byId(id),false));
 
   function syncHeroChips(theme){
@@ -364,7 +364,7 @@
   function applyDeconstruct(v,ry,rx){
     const p=Math.max(0,Math.min(1,v));
     anat.setExplodeProgress(p);
-    if(ry!==undefined)anat.setOrbit(ry,rx,10.0-p*0.8);
+    if(ry!==undefined)anat.setOrbit(ry,rx,10.4+p*2.2);
     expRange.value=Math.round(p*100);
     expPct.textContent=Math.round(p*100)+'%';
   }
