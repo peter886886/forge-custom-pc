@@ -4,8 +4,8 @@ const sel = {};
 let exploded = false, spin = false, airflow = false, resMult = 1, allExpanded = false;
 
 const pc = createPC($('#pcCanvas'), {
-  dist: 12.2,
-  lookOffset: [0.65, -0.32, -0.35],
+  dist: 13.5,
+  lookOffset: [0.52, -0.30, -0.92],
   onPick(cat, part) {
     if (!part) return;
     const pill = $('#partInspector');

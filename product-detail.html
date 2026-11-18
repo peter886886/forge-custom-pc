@@ -160,7 +160,7 @@ function ensureRigViewer() {
       case: byId(p.cat === 'case' ? p.id : 'x1'),
       mb:   byId(p.cat === 'mb'   ? p.id : (targetSocket === 'LGA1851' ? 'm1' : targetSocket === 'LGA1700' ? 'm6' : 'm3')),
       cpu:  byId(p.cat === 'cpu'  ? p.id : (targetSocket === 'LGA1851' ? 'c2' : targetSocket === 'LGA1700' ? 'c6' : 'c4')),
-      cool: byId(p.cat === 'cool' ? p.id : 'k2'),
+      cool: (p.cat === 'cpu' || p.id === 'a8') ? null : byId(p.cat === 'cool' ? p.id : 'k2'),
       ram:  byId(p.cat === 'ram'  ? p.id : 'r2'),
       gpu:  byId(p.cat === 'gpu'  ? p.id : 'g6'),
       ssd:  byId(p.cat === 'ssd'  ? p.id : 's3'),

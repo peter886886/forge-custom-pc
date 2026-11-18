@@ -604,7 +604,7 @@ header {
   backdrop-filter: blur(16px);
   border: 1px solid var(--line-hi);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 11px 14px;
 }
 .bar { width: 165px; height: 6px; background: #0A0A0A; border-radius: 99px; overflow: hidden; margin-top: 4px; border: 1px solid var(--line); }
 .bar > i { display: block; height: 100%; background: var(--txt); transition: width 0.28s var(--ease-out), background-color 0.22s var(--ease-out); }
@@ -875,7 +875,7 @@ form.card { display: grid; gap: 18px; }
   color: var(--mut);
 }
 
-.toast { position: fixed; bottom: 24px; right: 24px; background: #1A1A1A; border: 1px solid var(--line-hi); padding: 11px 16px; border-radius: 10px; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.75); transform: translateY(120%); opacity: 0; transition: transform 180ms var(--ease-ui), opacity 180ms var(--ease-ui); z-index: 250; font-size: 0.875rem; font-weight: 500; }
+.toast { position: fixed; bottom: 24px; left: 76px; background: #1A1A1A; border: 1px solid var(--line-hi); padding: 11px 16px; border-radius: 10px; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.75); transform: translateY(140%); opacity: 0; pointer-events: none; transition: transform 180ms var(--ease-ui), opacity 180ms var(--ease-ui); z-index: 250; font-size: 0.875rem; font-weight: 500; }
 .toast.show { transform: translateY(0); opacity: 1; }
 #toTop { position: fixed; bottom: 24px; left: 24px; width: 40px; height: 40px; border-radius: 50%; background: #181818; border: 1px solid var(--line-hi); color: var(--txt); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 180ms var(--ease-ui), transform 180ms var(--ease-ui), background-color 180ms var(--ease-ui), color 180ms var(--ease-ui); z-index: 90; }
 #toTop.show { opacity: 1; pointer-events: auto; }
@@ -934,6 +934,7 @@ footer a { color: var(--mut); } footer a:hover { color: var(--txt); opacity: 1; 
   .nav-tools .kbd-btn kbd { display: none; }
   .nav-tools .btn.sm { padding: 5px 8px; font-size: 0.72rem; white-space: nowrap; }
   .burger { width: 32px; height: 32px; }
+  .toast { left: 16px; right: 16px; bottom: 16px; text-align: center; }
 }
 
 /* Product Card Hover Image Crossfade */

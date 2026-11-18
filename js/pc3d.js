@@ -776,10 +776,12 @@ function createPC(canvas, opts) {
     cool: [1.22, -0.03, -0.22], acc: [1.52, 0.05, -0.52], gpu: [2.08, 0.18, -0.32]
   };
   const ACC_CUSTOM_EXP = {
+    a1: [-0.45, 0.0, 0.04],
+    a4: [1.52, -0.08, 0.14],
     a7: [-0.35, -0.05, 0.12],
     a8: [0.36, 0.06, -0.06],
     a9: [-1.15, 0.0, 0.16],
-    a10: [-1.15, 0.55, 0.16]
+    a10: [-1.15, 0.26, 0.16]
   };
 
   function makeFan(radius, depth, hasRGB, bladeColor) {
@@ -808,12 +810,16 @@ function createPC(canvas, opts) {
     return fg;
   }
 
-  function makeBraidedCable(pts, radius, count, isCustomSleeve) {
+  function makeBraidedCable(pts, radius, count, isCustomSleeve, spreadAxis) {
     const cg = new THREE.Group();
     const curve = new THREE.CatmullRomCurve3(pts);
+    const byY = (spreadAxis === 'y');
     for (let i = 0; i < count; i++) {
-      const off = (i - (count - 1) / 2) * (radius * 2.05);
-      const subPts = pts.map(p => new THREE.Vector3(p.x, p.y + off * 0.18, p.z + off));
+      const off = (i - (count - 1) / 2) * (radius * 2.40);
+      const subPts = pts.map(p => byY
+        ? new THREE.Vector3(p.x, p.y + off, p.z)
+        : new THREE.Vector3(p.x, p.y, p.z + off)
+      );
       const c2 = new THREE.CatmullRomCurve3(subPts);
       const geo = new THREE.TubeGeometry(c2, 20, radius, 8, false);
       const strandMat = (isCustomSleeve && i % 2 === 0) ? M.cableAccent : M.cableDark;
@@ -822,7 +828,10 @@ function createPC(canvas, opts) {
     if (isCustomSleeve) {
       [0.34, 0.68].forEach(t => {
         const pt = curve.getPoint(t);
-        const comb = new THREE.Mesh(new THREE.BoxGeometry(radius * 3.8, radius * 2.8, count * radius * 2.3), M.chrome);
+        const combGeo = byY
+          ? new THREE.BoxGeometry(radius * 3.8, count * radius * 2.55, radius * 2.8)
+          : new THREE.BoxGeometry(radius * 3.8, radius * 2.8, count * radius * 2.55);
+        const comb = new THREE.Mesh(combGeo, M.chrome);
         comb.position.copy(pt);
         cg.add(comb);
       });
@@ -899,16 +908,46 @@ function createPC(canvas, opts) {
       g.add(m);
       return m;
     };
-    addBox(2.35, 0.12, 4.45, 0, -2.30, 0);
-    addBox(2.35, 0.12, 4.45, 0, 2.30, 0);
+    const isChamfer = (cid === 'x2' || cid === 'x4');
+    const addChamferSlab = (xMin, xMax, zMin, zMax, chamXZ, h, yCenter, mat) => {
+      // Shape in (x, -z) plane so rotateX(-PI/2) maps (sx, sy) -> (x, 0, -sy = z)
+      const cx = chamXZ - zMax;
+      const cz = chamXZ - xMax;
+      const sh = new THREE.Shape();
+      sh.moveTo(xMin, -zMax);
+      sh.lineTo(Math.min(xMax, cx), -zMax);
+      sh.lineTo(xMax, -Math.min(zMax, cz));
+      sh.lineTo(xMax, -zMin);
+      sh.lineTo(xMin, -zMin);
+      sh.closePath();
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: false });
+      geo.rotateX(-Math.PI / 2);
+      const m = new THREE.Mesh(geo, mat || M.caseBody);
+      m.position.y = yCenter - h * 0.5;
+      m.castShadow = true;
+      m.receiveShadow = true;
+      g.add(m);
+      return m;
+    };
+
+    if (isChamfer) {
+      const topCham = (cid === 'x2') ? 2.65 : 2.80;
+      const deckCham = (cid === 'x2') ? 2.48 : 2.62;
+      addChamferSlab(-1.17, 1.17, -2.22, 2.22, topCham, 0.12, -2.30, M.caseBody);
+      addChamferSlab(-1.17, 1.17, -2.22, 2.22, topCham, 0.12, 2.30, M.caseBody);
+      addChamferSlab(-1.03, 1.03, -2.08, 2.08, deckCham, 0.05, -1.36, M.vrm);
+    } else {
+      addBox(2.35, 0.12, 4.45, 0, -2.30, 0);
+      addBox(2.35, 0.12, 4.45, 0, 2.30, 0);
+      addBox(2.10, 0.05, 4.18, 0.02, -1.36, 0, M.vrm);
+      addBox(2.12, 0.03, 0.02, 0.02, -1.35, 2.12, M.rgb);
+    }
     addBox(2.35, 4.48, 0.10, 0, 0, -2.18);
     addBox(0.08, 4.45, 4.25, -1.00, 0, 0, M.caseInterior);
-    addBox(0.09, 0.85, 0.34, -0.96, 1.05, 1.48, M.darkMetal);
-    addBox(0.09, 0.85, 0.34, -0.96, -0.15, 1.48, M.darkMetal);
-    // Hollow PSU shroud with CNC telemetry cutout revealing PSU bay
-    addBox(2.24, 0.05, 4.30, 0, -1.36, 0, M.vrm);
-    addBox(0.05, 0.86, 2.15, 1.09, -1.82, 1.05, M.caseInterior);
-    addBox(2.25, 0.03, 0.02, 0, -1.35, 2.16, M.rgb);
+    addBox(0.09, 0.50, 0.24, -0.98, 1.05, 1.34, M.darkMetal);
+    addBox(0.09, 0.36, 0.28, -0.98, -1.07, 0.40, M.darkMetal);
+    // Hollow PSU shroud skirt with CNC telemetry cutout revealing PSU bay
+    addBox(0.05, 0.86, isChamfer ? 1.66 : 2.15, 1.05, -1.82, isChamfer ? 0.60 : 1.05, M.caseInterior);
 
     if (cid === 'x3') {
       addBox(2.35, 0.18, 0.14, 0, 2.22, 2.18, M.vrmGold);
@@ -954,7 +993,7 @@ function createPC(canvas, opts) {
     sideEdge.visible = glassVisible;
     g.add(sideEdge);
 
-    [[-0.9, -2.44, -1.8], [0.9, -2.44, -1.8], [-0.9, -2.44, 1.8], [0.9, -2.44, 1.8]].forEach(p => {
+    [[-0.9, -2.44, -1.8], [0.9, -2.44, -1.8], [-0.9, -2.44, 1.8], [isChamfer ? 0.50 : 0.9, -2.44, isChamfer ? 1.50 : 1.8]].forEach(p => {
       const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.16, 20), M.chrome);
       foot.position.set(p[0], p[1], p[2]);
       g.add(foot);
@@ -1003,8 +1042,8 @@ function createPC(canvas, opts) {
       const vrm1 = new THREE.Mesh(new THREE.BoxGeometry(0.20, 1.12, 0.36), sinkMat);
       vrm1.position.set(-0.78, 1.25, -1.12);
       g.add(vrm1);
-      const vrm2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.32, 1.12), sinkMat);
-      vrm2.position.set(-0.78, 1.72, -0.45);
+      const vrm2 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.26, 1.04), sinkMat);
+      vrm2.position.set(-0.78, 1.75, -0.45);
       g.add(vrm2);
 
       const vrmLogo = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.42, 0.28), isGold ? M.gold : M.rgb);
@@ -1022,10 +1061,10 @@ function createPC(canvas, opts) {
       });
 
       const makeMb24Pin = () => makeBraidedCable([
-        new THREE.Vector3(-0.76, 1.08, 0.98),
-        new THREE.Vector3(-0.66, 1.08, 1.10),
-        new THREE.Vector3(-0.84, 1.08, 1.20)
-      ], 0.014, 6, false);
+        new THREE.Vector3(-0.74, 1.08, 1.05),
+        new THREE.Vector3(-0.66, 1.08, 1.17),
+        new THREE.Vector3(-0.92, 1.08, 1.30)
+      ], 0.013, 6, false, 'y');
 
       if (!hasCustomCables) g.add(makeMb24Pin());
 
@@ -1049,77 +1088,80 @@ function createPC(canvas, opts) {
       attachGlbSlot('cpu', build.cpu, [0.08, 0.48, 0.48], [-0.76, 1.25, -0.50]);
     }
 
-    // COOLER (Stepped VRM/RAM clearance — 0 overlap across Air & 360 AIO)
+    // COOLER (Centered over CPU z=-0.50, y=1.25 with stepped VRM/RAM/hose clearance — 0 overlap across Air & 360 AIO)
     if (build.cool) {
       const g = groups.cool;
       const kid = build.cool.id || 'k2';
       if (build.cool.type === 'air') {
         const finMat = (kid === 'k1') ? M.darkMetal : M.vrmSilver;
         const bladeCol = (kid === 'k1') ? 0x18181b : null;
-        [-0.78, -0.32].forEach(zOff => {
+        [-0.74, -0.26].forEach(zOff => {
           const stack = new THREE.Group();
           for (let i = 0; i < 16; i++) {
-            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.018, 0.34), finMat);
-            fin.position.set(-0.22, 0.90 + i * 0.044, zOff);
+            const fin = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.018, 0.30), finMat);
+            fin.position.set(-0.21, 0.90 + i * 0.044, zOff);
             stack.add(fin);
           }
           g.add(stack);
         });
         for (let i = -2; i <= 2; i++) {
-          const hp = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.86, 12), (kid === 'k1') ? M.darkMetal : M.copper);
+          const hp = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, 0.78, 12), (kid === 'k1') ? M.darkMetal : M.copper);
           hp.rotation.z = Math.PI / 2;
-          hp.position.set(-0.28, 1.25 + i * 0.09, -0.54);
+          hp.position.set(-0.26, 1.25 + i * 0.08, -0.50);
           g.add(hp);
         }
-        [-0.98, -0.55].forEach(zPos => {
-          const f = makeFan(0.40, 0.10, kid !== 'k1', bladeCol);
-          f.position.set(-0.22, 1.25, zPos);
+        [-0.94, -0.50].forEach(zPos => {
+          const f = makeFan(0.38, 0.08, kid !== 'k1', bladeCol);
+          f.position.set(-0.21, 1.25, zPos);
           g.add(f);
           spinFans.push(f);
         });
-        attachGlbSlot('cool', build.cool, [0.96, 1.12, 1.02], [-0.22, 1.25, -0.56]);
+        attachGlbSlot('cool', build.cool, [0.96, 1.08, 0.92], [-0.21, 1.25, -0.54]);
       } else {
-        const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.32, 0.24, 32), M.darkMetal);
+        const pump = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.29, 0.22, 32), M.darkMetal);
         pump.rotation.z = Math.PI / 2;
-        pump.position.set(-0.56, 1.25, -0.50);
+        pump.position.set(-0.58, 1.25, -0.50);
         g.add(pump);
 
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.024, 16, 36), M.rgb);
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.018, 16, 36), M.rgb);
         ring.rotation.y = Math.PI / 2;
-        ring.position.set(-0.43, 1.25, -0.50);
+        ring.position.set(-0.44, 1.25, -0.50);
         g.add(ring);
 
         const lcdTex = (kid === 'k3')
           ? makeTelemetryScreenTex('k3', 'HYDROSHIFT 2.88" IPS · 31°C')
           : makeLabelTex({ w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', tag: 'LIQUID TEMP', title: '31°C', sub: build.cool.name.slice(0, 16) });
-        const lcdGeo = (kid === 'k3') ? new THREE.BoxGeometry(0.02, 0.44, 0.44) : new THREE.CircleGeometry(0.24, 32);
+        const lcdGeo = (kid === 'k3') ? new THREE.BoxGeometry(0.016, 0.44, 0.44) : new THREE.CircleGeometry(0.24, 32);
         const lcd = new THREE.Mesh(lcdGeo, new THREE.MeshBasicMaterial({ map: lcdTex }));
         if (kid !== 'k3') lcd.rotation.y = Math.PI / 2;
-        lcd.position.set(-0.42, 1.25, -0.50);
+        lcd.position.set(-0.415, 1.25, -0.50);
         g.add(lcd);
 
-        const rad = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.18, 3.22), M.darkMetal);
-        rad.position.set(-0.05, 2.04, -0.12);
+        const rad = new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.18, 3.24), M.darkMetal);
+        rad.position.set(-0.12, 2.04, 0.01);
         g.add(rad);
-        [-1.12, -0.12, 0.88].forEach(zPos => {
-          const f = makeFan(0.48, 0.11, true);
+        [-1.00, 0.0, 1.00].forEach(zPos => {
+          const f = makeFan(0.45, 0.10, true);
           f.rotation.x = Math.PI / 2;
-          f.position.set(-0.05, 1.88, zPos);
+          f.position.set(-0.12, 1.88, zPos);
           g.add(f);
           spinFans.push(f);
         });
 
-        [0, 0.10].forEach(off => {
+        [-0.08, 0.08].forEach(dz => {
+          const s = dz / 0.08; // -1 or +1 perpendicular lane
           const curve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(-0.46, 1.22 + off, -0.34),
-            new THREE.Vector3(0.24, 1.38 + off, 0.08),
-            new THREE.Vector3(0.18, 1.72, 0.62 + off),
-            new THREE.Vector3(-0.04, 1.88, 0.88 + off)
+            new THREE.Vector3(-0.56, 1.585, -0.50 + 0.08 * s),
+            new THREE.Vector3(-0.18 - 0.09 * s, 1.62, -0.05 + 0.09 * s),
+            new THREE.Vector3(0.14 - 0.09 * s, 1.68, 0.95 + 0.07 * s),
+            new THREE.Vector3(-0.12 - 0.10 * s, 1.78, 1.555 + 0.025 * s),
+            new THREE.Vector3(-0.13 - 0.09 * s, 1.915, 1.555 + 0.025 * s)
           ]);
-          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.038, 12, false), M.darkMetal);
+          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.024, 10, false), M.darkMetal);
           g.add(tube);
         });
-        attachGlbSlot('cool', build.cool, [1.42, 1.28, 3.24], [-0.05, 1.54, -0.12]);
+        const aioPosX = (kid === 'k3') ? -0.115 : -0.148;
+        attachGlbSlot('cool', build.cool, [1.42, 1.28, 3.24], [aioPosX, 1.533, 0.013]);
       }
     }
 
@@ -1205,18 +1247,20 @@ function createPC(canvas, opts) {
         spinFans.push(f);
       }
 
-      // Clean 12V-2x6 power lead routed outside shroud & clear of anti-sag / riser / tray (attached to grp, NOT glb!)
-      const makeGpu12VLead = () => makeBraidedCable([
-        new THREE.Vector3(0.42, cy - 0.02, cz + 0.30),
-        new THREE.Vector3(0.52, cy - H / 2 - 0.14, cz + 0.40),
-        new THREE.Vector3(0.05, -0.92, 0.52),
-        new THREE.Vector3(-0.78, -1.04, 0.88)
-      ], 0.013, 6, hasCustomCables);
+      // Clean 12V-2x6 power lead routed outside shroud, above bottom fans, & below MB edge into lower grommet!
+      const gpuOuterX = is2Fan ? 0.47 : 0.485;
+      const makeGpu12VLead = (startX) => makeBraidedCable([
+        new THREE.Vector3(startX, cy - 0.06, 0.38),
+        new THREE.Vector3(startX + 0.035, cy - H / 2 - 0.14, 0.40),
+        new THREE.Vector3(0.05, -0.94, 0.40),
+        new THREE.Vector3(-0.52, -1.06, 0.40),
+        new THREE.Vector3(-0.935, -1.07, 0.40)
+      ], 0.012, 6, hasCustomCables, 'z');
 
-      g.add(makeGpu12VLead());
+      g.add(makeGpu12VLead(0.495));
 
       attachGlbSlot('gpu', build.gpu, [W, H + 0.04, L], [cx, cy, cz], (_glb, grp) => {
-        grp.add(makeGpu12VLead());
+        grp.add(makeGpu12VLead(gpuOuterX));
       });
     }
 
@@ -1256,11 +1300,11 @@ function createPC(canvas, opts) {
 
         if (id === 'a1') {
           wrap.add(makeBraidedCable([
-            new THREE.Vector3(-0.74, 1.08, 0.96),
-            new THREE.Vector3(-0.62, 1.08, 1.08),
-            new THREE.Vector3(-0.82, 1.08, 1.18)
-          ], 0.014, 6, true));
-          attachGlbSlot('acc', acc, [0.28, 0.56, 0.30], [-0.70, 1.08, 1.06]);
+            new THREE.Vector3(-0.74, 1.08, 1.05),
+            new THREE.Vector3(-0.64, 1.08, 1.17),
+            new THREE.Vector3(-0.92, 1.08, 1.30)
+          ], 0.013, 6, true, 'y'));
+          attachGlbSlot('acc', acc, [0.26, 0.32, 0.34], [-0.74, 1.08, 1.21]);
         } else if (id === 'a2') {
           [-0.92, 0, 0.92].forEach(zPos => {
             const f = makeFan(0.43, 0.11, true);
@@ -1335,17 +1379,21 @@ function createPC(canvas, opts) {
           attachGlbSlot('acc', acc, [0.14, 0.40, 0.40], [-0.81, -0.82, 1.56]);
         } else if (id === 'a8') {
           const cx = -0.745, cy = 1.25, cz = -0.50;
-          const bTop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.64), M.gold); bTop.position.set(cx, cy + 0.28, cz); wrap.add(bTop);
-          const bBot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.08, 0.64), M.gold); bBot.position.set(cx, cy - 0.28, cz); wrap.add(bBot);
-          const bLeft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.48, 0.08), M.gold); bLeft.position.set(cx, cy, cz - 0.28); wrap.add(bLeft);
-          const bRight = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.48, 0.08), M.gold); bRight.position.set(cx, cy, cz + 0.28); wrap.add(bRight);
-          attachGlbSlot('acc', acc, [0.052, 0.64, 0.64], [cx, cy, cz]);
+          const bTop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.61), M.gold); bTop.position.set(cx, cy + 0.28, cz); wrap.add(bTop);
+          const bBot = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.61), M.gold); bBot.position.set(cx, cy - 0.28, cz); wrap.add(bBot);
+          const bLeft = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.50, 0.05), M.gold); bLeft.position.set(cx, cy, cz - 0.28); wrap.add(bLeft);
+          const bRight = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.50, 0.05), M.gold); bRight.position.set(cx, cy, cz + 0.28); wrap.add(bRight);
+          attachGlbSlot('acc', acc, [0.052, 0.62, 0.62], [cx, cy, cz]);
         } else if (id === 'a9') {
-          const nf = makeFan(0.42, 0.13, false, 0x1c1917);
-          nf.position.set(-0.46, -0.68, 1.84);
+          const cid = (build.case && build.case.id) || 'x1';
+          const isCham = (cid === 'x2' || cid === 'x4');
+          const nfx = isCham ? -0.36 : 0.0;
+          const nfz = isCham ? 1.88 : 1.95;
+          const nf = makeFan(0.41, 0.12, false, 0x1c1917);
+          nf.position.set(nfx, -0.64, nfz);
           wrap.add(nf);
           spinFans.push(nf);
-          attachGlbSlot('acc', acc, [0.86, 0.86, 0.14], [-0.46, -0.68, 1.84]);
+          attachGlbSlot('acc', acc, [0.84, 0.84, 0.13], [nfx, -0.64, nfz]);
         } else {
           const fltFrame = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.025, 3.80), M.rgb2);
           fltFrame.position.set(0, 2.388, 0);
@@ -1359,20 +1407,23 @@ function createPC(canvas, opts) {
     }
   }
 
-  // Thermal Airflow Particle Stream Group (routed along open front-to-top/rear air channels, clear of GPU/Cooler solids)
+  // Thermal Airflow Particle Stream Group (stratified 3D lanes strictly clear of GPU/Cooler/Anti-Sag/45° Chamfer!)
   const airflowGroup = new THREE.Group();
   airflowGroup.visible = !!opts.airflow;
   root.add(airflowGroup);
   const airParticles = [];
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < 28; i++) {
     const arrow = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.007, 0.018, 0.40, 8),
-      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xe5a93c : 0x10b981, transparent: true, opacity: 0.65 })
+      new THREE.CylinderGeometry(0.004, 0.013, 0.18, 8),
+      new THREE.MeshBasicMaterial({ color: i % 2 === 0 ? 0xe5a93c : 0x10b981, transparent: true, opacity: 0.38 })
     );
     arrow.rotation.x = -0.52;
-    arrow.position.set(0.52 + Math.random() * 0.38, -1.15 + Math.random() * 2.8, -1.5 + Math.random() * 2.9);
+    const xLane = 0.64 + (i % 4) * 0.062;
+    const zOrigin = -0.45 + Math.floor(i / 4) * 0.27;
+    const phase = (i * 0.23) % 1.0;
+    arrow.position.set(xLane, -1.08 + phase * 2.65, zOrigin - phase * 1.54);
     airflowGroup.add(arrow);
-    airParticles.push({ mesh: arrow, speed: 0.024 + Math.random() * 0.018 });
+    airParticles.push({ mesh: arrow, xLane, zOrigin, speed: 0.022 + (i % 5) * 0.004 });
   }
 
   const currentBuild = { case: { id: 'x1' } };
@@ -1505,9 +1556,10 @@ function createPC(canvas, opts) {
       airParticles.forEach(p => {
         p.mesh.position.y += p.speed;
         p.mesh.position.z -= p.speed * 0.58;
-        if (p.mesh.position.y > 1.95 || p.mesh.position.z < -1.85) {
-          p.mesh.position.y = -1.20;
-          p.mesh.position.z = 1.55;
+        if (p.mesh.position.y > 1.58 || p.mesh.position.z < -1.68) {
+          p.mesh.position.x = p.xLane;
+          p.mesh.position.y = -1.08;
+          p.mesh.position.z = p.zOrigin;
         }
       });
     }
@@ -1643,9 +1695,19 @@ function createPC(canvas, opts) {
         case: { look: [0.00, 0.00, 0.00], ry: 0.62, rx: 0.15, d: 7.6 },
         acc: { look: [-0.15, -0.55, 1.05], ry: 0.68, rx: 0.08, d: 5.1 }
       };
-      if (partId === 'a8') focusMap.acc = { look: [-0.62, 1.25, -0.50], ry: 0.84, rx: 0.12, d: 4.4 };
-      else if (partId === 'a6' || partId === 'a1') focusMap.acc = { look: [-0.65, 0.68, 1.18], ry: 0.88, rx: 0.08, d: 4.6 };
-      else if (partId === 'a10') focusMap.acc = { look: [0, 1.85, 0], ry: 0.65, rx: 0.42, d: 5.6 };
+      const accFocus = {
+        a1: { look: [-0.72, 1.05, 1.15], ry: 0.90, rx: 0.08, d: 4.3 },
+        a2: { look: [-0.16, -1.18, -0.05], ry: 0.72, rx: 0.22, d: 4.9 },
+        a3: { look: [-0.48, -1.22, 1.48], ry: 0.78, rx: 0.16, d: 4.1 },
+        a4: { look: [0.32, -0.82, 0.85], ry: 0.74, rx: 0.08, d: 4.3 },
+        a5: { look: [-0.46, -0.92, -0.35], ry: 0.82, rx: 0.06, d: 4.5 },
+        a6: { look: [-0.72, 0.44, 1.30], ry: 0.92, rx: 0.06, d: 4.3 },
+        a7: { look: [-0.75, -0.82, 1.52], ry: 0.92, rx: 0.08, d: 4.2 },
+        a8: { look: [-0.66, 1.25, -0.50], ry: 0.84, rx: 0.10, d: 4.1 },
+        a9: { look: [-0.10, -0.64, 1.85], ry: 0.58, rx: 0.08, d: 4.8 },
+        a10: { look: [0, 1.85, 0], ry: 0.65, rx: 0.42, d: 5.6 }
+      };
+      if (partId && accFocus[partId]) focusMap.acc = accFocus[partId];
       const cfg = focusMap[cat] || focusMap.case;
       desiredLook.set(cfg.look[0], cfg.look[1], cfg.look[2]);
       targetRotY = cfg.ry;
@@ -2045,10 +2107,10 @@ function createPartViewer(canvas, part, opts) {
   if (modelKey) {
     parseModelBase64(modelKey).then(sceneRoot => {
       if (!alive || !sceneRoot) return;
-      // Fit within a comfortable 2.75 x 2.35 x 2.75 turntable showcase bounding cube
-      const normalized = normalizeGlbToBox(sceneRoot, 2.75, 2.35, 2.75, true);
-      // Apply ergonomic showcase orientation per hardware category
-      if (cat === 'gpu') normalized.rotation.set(-1.05, 0.22, -0.15);
+      // Fit within a comfortable 2.32 x 1.84 x 2.32 turntable showcase bounding cube (0 frustum clipping across all 53 SKUs)
+      const normalized = normalizeGlbToBox(sceneRoot, 2.32, 1.84, 2.32, true);
+      // Apply ergonomic horizontal showcase orientation per hardware category
+      if (cat === 'gpu') normalized.rotation.set(0.42, -1.16, 0.18);
       else if (cat === 'mb' || cat === 'cpu') normalized.rotation.set(0.08, -Math.PI / 2, 0);
       else if (cat === 'ram') normalized.rotation.set(0.05, -0.58, 0);
       else if (cat === 'ssd') normalized.rotation.set(0.28, -Math.PI / 2 + 0.22, 0);
@@ -2078,7 +2140,7 @@ function createPartViewer(canvas, part, opts) {
     });
   }
 
-  let curRotY = 0.48, curRotX = 0.20, curDist = 4.5;
+  let curRotY = 0.48, curRotX = 0.20, curDist = 5.95;
   let targetRotY = curRotY, targetRotX = curRotX, targetDist = curDist;
   let dragging = false, lx = 0, ly = 0, autoSpin = true;
 
