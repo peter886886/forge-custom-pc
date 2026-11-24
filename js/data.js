@@ -115,8 +115,149 @@ const PREBUILT = [
   }
 ];
 
+const SERVICES = [
+  {
+    id: 'svc1',
+    name: 'Hardware Fault Diagnosis',
+    aliases: ['Repair & Diagnostics', 'Hardware Fault Diagnosis & Telemetry Report'],
+    tag: 'Same-Day Lab',
+    turnaround: '1 hour',
+    price: 39,
+    memberFree: true,
+    spec: 'Oscilloscope & thermal camera fault isolation, BIOS recovery, and full telemetry report'
+  },
+  {
+    id: 'svc2',
+    name: 'OS Reinstall & BIOS Tuning',
+    aliases: ['Windows 11 Pro + BIOS EXPO/XMP Calibration'],
+    tag: 'Same-Day Lab',
+    turnaround: 'Same day',
+    price: 45,
+    memberFree: false,
+    spec: 'Clean Windows 11 Pro provisioning, UEFI update, and EXPO/XMP memory calibration'
+  },
+  {
+    id: 'svc3',
+    name: 'Component Upgrade Service',
+    aliases: ['Component Upgrade', 'Component Upgrade & Custom Cable Management'],
+    tag: 'PCIe 5.0 Ready',
+    turnaround: 'Same day',
+    price: 49,
+    memberFree: false,
+    spec: 'Install RTX 50-Series GPU, ATX 3.1 PSU, RAM, or Gen5 NVMe with combed cable routing'
+  },
+  {
+    id: 'svc4',
+    name: 'Deep Clean & Kryonaut Re-Paste',
+    aliases: ['Ultrasonic Deep Clean & Kryonaut Extreme Re-Paste'],
+    tag: 'Thermal Service',
+    turnaround: '1 day',
+    price: 59,
+    memberFree: false,
+    spec: 'Ultrasonic dust removal, radiator flushing, and Thermal Grizzly Kryonaut Extreme re-paste'
+  },
+  {
+    id: 'svc5',
+    name: 'On-Site Home Assembly',
+    aliases: ['Home & Studio Assembly', 'On-Site Home / Studio Assembly'],
+    tag: 'On-Site Service',
+    turnaround: 'By appointment',
+    price: 149,
+    memberFree: false,
+    spec: 'Senior FORGE technician assembles, routes cabling, and calibrates your PC on-site in HK'
+  },
+  {
+    id: 'svc6',
+    name: 'Cleanroom Data Recovery',
+    aliases: ['NVMe & RAID Data Recovery', 'Cleanroom NVMe / SSD Data Recovery'],
+    tag: 'Cleanroom Lab',
+    turnaround: '3–5 days',
+    price: 199,
+    memberFree: false,
+    spec: 'Controller and NAND flash recovery from damaged SSDs, HDDs, and studio RAID arrays'
+  },
+  {
+    id: 'svc7',
+    name: 'Enterprise Workstation Deployment',
+    aliases: ['AI & Render Workstations'],
+    tag: 'Enterprise SLA',
+    turnaround: '2–3 days',
+    price: 299,
+    memberFree: false,
+    spec: 'Multi-GPU Blackwell workstation provisioning, studio deployment, and 4-hour on-site SLA'
+  },
+  {
+    id: 'svc8',
+    name: 'Complete System Maintenance Bundle',
+    aliases: ['Maintenance Bundle'],
+    tag: 'Lab Bundle',
+    turnaround: '1 day',
+    price: 89,
+    memberFree: false,
+    spec: 'Full diagnostics, ultrasonic clean, Kryonaut re-paste, BIOS update, and fan-curve tuning'
+  }
+];
+
 const byId = id => PARTS.find(p => p.id === id) || PREBUILT.find(p => p.id === id);
 const kitPrice = k => k.parts.reduce((s, i) => s + (byId(i) ? byId(i).price : 0), 0) + 99;
+
+function serviceByIdOrName(idOrName) {
+  const raw = String(idOrName || '').trim();
+  if (!raw) return null;
+  const cleaned = raw.replace(/\s*\(FORGE Certified Service\)\s*$/i, '').trim().toLowerCase();
+  return SERVICES.find(s =>
+    s.id.toLowerCase() === cleaned ||
+    s.name.toLowerCase() === cleaned ||
+    (Array.isArray(s.aliases) && s.aliases.some(a => a.toLowerCase() === cleaned))
+  ) || null;
+}
+
+function serviceMemberPrice(svc) {
+  if (!svc) return 0;
+  return svc.memberFree ? 0 : Math.round(svc.price * 0.9);
+}
+
+function computeOrderPricing({ hwSub = 0, serviceEntries = [], asm = 0, isMember = false, hasForge5 = false }) {
+  const hw = Math.max(0, Number(hwSub) || 0);
+  const assembly = Math.max(0, Number(asm) || 0);
+  const svcSub = serviceEntries.reduce((s, e) => s + (Number(e.svc?.price) || 0) * Math.max(1, Number(e.qty) || 1), 0);
+  const hwDisc = (isMember || hasForge5) ? Math.round(hw * 0.05) : 0;
+  let svcDisc = 0;
+  let hasFreeDiag = false;
+  let hasMemberSvc10 = false;
+
+  serviceEntries.forEach(e => {
+    const svc = e.svc;
+    const qty = Math.max(1, Number(e.qty) || 1);
+    if (!svc) return;
+    if (isMember) {
+      if (svc.memberFree) {
+        svcDisc += svc.price * qty;
+        hasFreeDiag = true;
+      } else {
+        svcDisc += (svc.price - Math.round(svc.price * 0.9)) * qty;
+        hasMemberSvc10 = true;
+      }
+    } else if (hasForge5) {
+      svcDisc += Math.round(svc.price * qty * 0.05);
+    }
+  });
+
+  const sub = hw + svcSub;
+  const disc = hwDisc + svcDisc;
+  const total = Math.max(0, sub + assembly - disc);
+  let label = 'Member discount (5% hardware · 10% services)';
+  if (isMember) {
+    const parts = [];
+    if (hw > 0) parts.push('5% Hardware');
+    if (hasFreeDiag) parts.push('Free Diagnostics');
+    if (hasMemberSvc10) parts.push('10% Lab Services');
+    label = parts.length ? `Member benefit (${parts.join(' + ')})` : 'Member discount (5% hardware · 10% services)';
+  } else if (hasForge5) {
+    label = 'Promo code FORGE5 (5% off)';
+  }
+  return { sub, hwSub: hw, svcSub, asm: assembly, hwDisc, svcDisc, disc, total, hasFreeDiag, hasMemberSvc10, label };
+}
 
 /* Detailed CAD-style SVG hardware schematics (Pure Carbon + Warm Gold/Emerald palette) */
 const PALETTE = {

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>3D PC Configurator | FORGE</title>
-<meta name="description" content="Configure your custom PC in real-time 3D with automatic compatibility checks, airflow preview, and gaming FPS estimates.">
+<meta name="description" content="Configure your custom PC in real-time 3D with automatic compatibility checks, airflow preview, shareable build links, and gaming FPS estimates.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,15 +13,15 @@
     <!-- left: component steps -->
     <aside>
       <p class="eyebrow">3D Configurator</p>
-      <h2>Configure System</h2>
-      <p class="mut" style="margin-bottom:14px;font-size:.875rem">Select components below or click any installed 3D part inside the chassis to inspect it.</p>
+      <h1 style="font-size:clamp(1.75rem,3vw,2.35rem);margin-bottom:12px">Configure System</h1>
+      <p class="mut" style="margin-bottom:14px;font-size:.875rem">Select components below or click any installed 3D part inside the chassis to inspect it. All prices in USD.</p>
       <div class="filters">
-        <button class="chip sm" data-kit="pb1">Pulse · 1440p</button>
-        <button class="chip sm" data-kit="pb2">Apex · 9800X3D</button>
-        <button class="chip sm" data-kit="pb3">Titan · 5090</button>
-        <button class="chip sm" data-kit="pb4">Studio · Pro</button>
-        <button class="chip sm" id="clear">Reset</button>
-        <button class="chip sm" id="toggleAll">Expand All</button>
+        <button class="chip sm" type="button" data-kit="pb1">Pulse · 1440p</button>
+        <button class="chip sm" type="button" data-kit="pb2">Apex · 9800X3D</button>
+        <button class="chip sm" type="button" data-kit="pb3">Titan · 5090</button>
+        <button class="chip sm" type="button" data-kit="pb4">Studio · Pro</button>
+        <button class="chip sm" type="button" id="clear">Reset</button>
+        <button class="chip sm" type="button" id="toggleAll">Expand All</button>
       </div>
       <div class="steps" id="steps"></div>
     </aside>
@@ -33,23 +34,28 @@
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
             <div class="telemetry-pill">Load <b id="tempEst">58°C</b></div>
             <div class="telemetry-pill">Noise <b id="noiseEst">29 dBA</b></div>
+            <div class="telemetry-pill ok" id="compatSocket">Socket OK</div>
+            <div class="telemetry-pill ok" id="compatClear">Clearance OK</div>
+            <div class="telemetry-pill ok" id="compatPsu">PSU Optimal</div>
             <div class="telemetry-pill" id="partInspector">Click part to inspect</div>
           </div>
           <div style="pointer-events:auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center;background:rgba(14,14,14,.88);backdrop-filter:blur(10px);padding:5px 8px;border-radius:8px;border:1px solid var(--line)">
             <span class="mut" style="font-family:var(--mono);font-size:.68rem;padding:0 2px">Add-ons</span>
-            <button class="chip sm" id="quickAccA1" onclick="quickMod('a1')">Cables +$49</button>
-            <button class="chip sm" id="quickAccA4" onclick="quickMod('a4')">Anti-Sag +$25</button>
-            <button class="chip sm" id="quickAccA2" onclick="quickMod('a2')">LCD Fans +$149</button>
-            <button class="chip sm" id="quickAccA6" onclick="quickMod('a6')">Sensor HUD +$59</button>
+            <button class="chip sm" type="button" id="quickAccA1" onclick="quickMod('a1')">Cables +$49</button>
+            <button class="chip sm" type="button" id="quickAccA4" onclick="quickMod('a4')">Anti-Sag +$25</button>
+            <button class="chip sm" type="button" id="quickAccA2" onclick="quickMod('a2')">LCD Fans +$149</button>
+            <button class="chip sm" type="button" id="quickAccA6" onclick="quickMod('a6')">Sensor HUD +$59</button>
           </div>
         </div>
         <div class="tools">
-          <button class="btn sm" id="bExplode" title="Separate all parts">Explode</button>
-          <button class="btn sm" id="bAirflow" title="Preview thermal airflow">Airflow</button>
-          <button class="btn sm" id="bGlass" title="Toggle side glass">Glass</button>
-          <button class="btn sm" id="bSpin" title="Auto rotate">Spin</button>
-          <button class="btn sm" id="bReset">Reset</button>
-          <button class="btn sm" id="bShot">Snapshot</button>
+          <button class="btn sm" type="button" id="bExplode" title="Separate all parts">Explode</button>
+          <button class="btn sm" type="button" id="bAirflow" title="Preview thermal airflow">Airflow</button>
+          <button class="btn sm" type="button" id="bGlass" title="Toggle side glass">Glass</button>
+          <button class="btn sm" type="button" id="bSpin" title="Auto rotate">Spin</button>
+          <button class="btn sm" type="button" id="bReset">Reset</button>
+          <button class="btn sm" type="button" id="bShot">Snapshot</button>
+          <button class="btn sm" type="button" id="bShare" title="Copy shareable 3D build URL">Share Build</button>
+          <button class="btn sm" type="button" id="bPrint" title="Print clean component spec sheet">Print Spec</button>
         </div>
       </div>
       <div class="hud">
@@ -60,13 +66,13 @@
           <div class="swatches" id="caseSw"></div>
         </div>
         <div class="panel" style="min-width:316px;max-width:100%">
-          <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut" style="font-size:.84rem">Total</span><b class="price" id="tot">$0</b></div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mut" style="font-size:.84rem">Total (USD)</span><b class="price" id="tot">$0</b></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin-top:6px"><span class="mut">Power <b id="watt" style="color:var(--txt)">0W</b></span><div class="bar"><i id="wattBar"></i></div></div>
           <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin:4px 0"><span class="mut">3DMark</span><div class="bar"><i id="perfBar"></i></div></div>
           <div class="fps-box">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <span class="mut" style="font-size:.72rem">Est. FPS</span>
-              <div class="res-tabs" id="resTabs"><button data-m="1" class="on">1080p</button><button data-m="0.76">1440p</button><button data-m="0.48">4K</button></div>
+              <div class="res-tabs" id="resTabs"><button type="button" data-m="1" class="on">1080p</button><button type="button" data-m="0.76">1440p</button><button type="button" data-m="0.48">4K</button></div>
             </div>
             <div class="fps-row"><span>Cyberpunk 2077</span><b id="fps1">— FPS</b></div>
             <div class="fps-row"><span>Black Myth: Wukong</span><b id="fps2">— FPS</b></div>
@@ -82,11 +88,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Printable Custom Build Spec Sheet (visible via Print Spec button / @media print) -->
+  <section class="print-only" id="printSpecSheet" aria-label="Printable PC Specification Sheet"></section>
 </main>
 
 <div class="modal" id="shotModal" onclick="if(event.target===this)this.classList.remove('show')"><div class="card center">
-  <h3>3D Configuration Snapshot</h3><img id="shotImg" alt="Snapshot of your custom PC" style="border-radius:8px;margin:14px 0;border:1px solid var(--line)">
-  <a class="btn solid" id="shotDl" download="forge-build.png">Download PNG</a> <button class="btn" type="button" onclick="this.closest('.modal').classList.remove('show')">Close</button>
+  <h2 style="font-size:1.25rem;margin-bottom:4px">3D Configuration Snapshot</h2><img id="shotImg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Snapshot of your custom PC" style="border-radius:8px;margin:14px 0;border:1px solid var(--line)">
+  <a class="btn solid" id="shotDl" download="forge-build.png" href="#">Download PNG</a> <button class="btn" type="button" onclick="this.closest('.modal').classList.remove('show')">Close</button>
 </div></div>
 
 <script src="lib/three.min.js"></script>

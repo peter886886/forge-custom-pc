@@ -4,15 +4,16 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Staff Dashboard | FORGE</title>
 <meta name="description" content="FORGE internal back-office operations, fulfillment, 53-SKU inventory, and support console.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
-<section><div class="wrap">
+<section style="padding-top:32px"><div class="wrap">
  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
   <div>
    <p class="eyebrow">Back-Office Operations Console</p>
-   <h2>Operations <span class="grad">Dashboard</span></h2>
+   <h1 style="font-size:clamp(1.85rem,3vw,2.5rem);margin-bottom:4px">Operations <span class="grad">Dashboard</span></h1>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
    <span class="status s-ok" id="opBadge">Staff 01 · Kwun Tong Lab</span>
@@ -56,7 +57,7 @@
   <div class="g2" style="align-items:start;gap:24px">
    <div class="card" style="min-width:0">
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">
-     <h3 style="margin:0">7-Day Order Volume</h3>
+     <h2 style="margin:0;font-size:1.15rem">7-Day Order Volume</h2>
      <span class="mut" style="font-family:var(--mono);font-size:.74rem">478 builds / wk</span>
     </div>
     <div id="chart" style="display:flex;align-items:flex-end;gap:12px;height:215px;padding-top:16px;margin-top:18px"></div>
@@ -64,7 +65,7 @@
 
    <div class="card" style="min-width:0">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-     <h3 style="margin:0">Kwun Tong Burn-In Rack Monitor</h3>
+     <h2 style="margin:0;font-size:1.15rem">Kwun Tong Burn-In Rack Monitor</h2>
      <span class="status s-ok">22°C Ambient · 4/4 Bays Active</span>
     </div>
     <div id="burnInRack" style="display:grid;gap:10px"></div>
@@ -73,12 +74,12 @@
 
   <div class="card" style="margin-top:20px">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-    <h3 style="margin:0">Recent Support Tickets</h3>
+    <h2 style="margin:0;font-size:1.15rem">Recent Support Tickets</h2>
     <button type="button" class="btn sm subtle" onclick="switchStaffTab('support')">Manage All Tickets →</button>
    </div>
    <div class="tblwrap">
     <table>
-     <thead><tr><th>Ref</th><th>Type</th><th>Customer</th><th>Message</th><th>Status</th></tr></thead>
+     <thead><tr><th scope="col">Ref</th><th scope="col">Type</th><th scope="col">Customer</th><th scope="col">Message</th><th scope="col">Status</th></tr></thead>
      <tbody id="tl"></tbody>
     </table>
    </div>
@@ -87,6 +88,7 @@
 
  <!-- Tab 2: Orders & Fulfillment -->
  <div class="tpane" id="tab-orders">
+  <h2 class="sr-only">Orders and Fulfillment</h2>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
    <div class="filters" id="ordStageChips" style="margin:0">
     <button type="button" class="chip sm on" data-stage="all">All Stages</button>
@@ -105,7 +107,7 @@
   </div>
   <div class="tblwrap">
    <table>
-    <thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Hardware / Items</th><th>Total</th><th>Fulfillment Stage</th><th>Action</th></tr></thead>
+    <thead><tr><th scope="col">Order ID</th><th scope="col">Date</th><th scope="col">Customer</th><th scope="col">Hardware / Items</th><th scope="col">Total (USD)</th><th scope="col">Fulfillment Stage</th><th scope="col">Action</th></tr></thead>
     <tbody id="ordTbl"></tbody>
    </table>
   </div>
@@ -113,6 +115,7 @@
 
  <!-- Tab 3: Inventory & Pricing (53 SKUs) -->
  <div class="tpane" id="tab-inventory">
+  <h2 class="sr-only">Inventory and Pricing</h2>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <div class="field" style="margin:0;min-width:170px">
@@ -133,7 +136,7 @@
   </div>
   <div class="tblwrap">
    <table>
-    <thead><tr><th>SKU</th><th>Component</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Restock</th></tr></thead>
+    <thead><tr><th scope="col">SKU</th><th scope="col">Component</th><th scope="col">Category</th><th scope="col">Price (USD)</th><th scope="col">Stock</th><th scope="col">Status</th><th scope="col">Restock</th></tr></thead>
     <tbody id="inv"></tbody>
    </table>
   </div>
@@ -144,14 +147,14 @@
   <div class="card">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
     <div>
-     <h3 style="margin:0">Customer Support &amp; Complaint Tickets</h3>
+     <h2 style="margin:0;font-size:1.15rem">Customer Support &amp; Complaint Tickets</h2>
      <p class="mut" style="font-size:.82rem;margin-top:2px">Changes persist immediately to localStorage.forgeTickets.</p>
     </div>
     <span class="mut" id="supCount" style="font-family:var(--mono);font-size:.78rem"></span>
    </div>
    <div class="tblwrap">
     <table>
-     <thead><tr><th>Ticket Ref</th><th>Type</th><th>Customer</th><th>Date</th><th>Summary</th><th>Status</th></tr></thead>
+     <thead><tr><th scope="col">Ticket Ref</th><th scope="col">Type</th><th scope="col">Customer</th><th scope="col">Date</th><th scope="col">Summary</th><th scope="col">Status</th></tr></thead>
      <tbody id="supTbl"></tbody>
     </table>
    </div>
@@ -160,7 +163,7 @@
   <div class="card" style="margin-top:20px">
    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
     <div>
-     <h3 style="margin:0">Customer Reviews Moderation</h3>
+     <h2 style="margin:0;font-size:1.15rem">Customer Reviews Moderation</h2>
      <p class="mut" style="font-size:.82rem;margin-top:2px">Moderate submissions from the Customer Comments wall (localStorage.forgeComments).</p>
     </div>
     <a class="btn sm subtle" href="comment.html">View Public Wall →</a>
@@ -186,7 +189,7 @@ $('#out').onclick = () => {
 };
 
 const BASE_REVENUE = 248600;
-const SEED_IDS = new Set(['FG-8419', 'FG-8372', 'FG-8295']);
+const SEED_IDS = new Set(['FG-8419', 'FG-8372', 'FG-8295', 'FG-8190']);
 const STAGES = {
   1: 'Order Confirmed',
   2: 'Parts Allocated',
@@ -207,7 +210,7 @@ const FALLBACK_ORDERS = [
     date: '2026-11-15',
     customer: 'Kenji Leung',
     items: 'FORGE Titan Ultra 2026 (Prebuilt System)',
-    itemsList: [{ id: 'pb3', type: 'kit', name: 'FORGE Titan Ultra 2026', spec: 'Core Ultra 9 285K · RTX 5090 32GB · 64GB DDR5-7200', price: 5353, qty: 1, asm: 0, img: 'img/products/pb3.png' }],
+    itemsList: [{ id: 'pb3', type: 'kit', name: 'FORGE Titan Ultra 2026', spec: 'Core Ultra 9 285K · RTX 5090 32GB · 64GB DDR5-7200', price: 5353, qty: 1, asm: 0, img: 'img/products/pb3.webp' }],
     total: 5353,
     stage: 4,
     status: '24h OCCT Burn-In',
@@ -218,7 +221,7 @@ const FALLBACK_ORDERS = [
     date: '2026-11-12',
     customer: 'Chloe Tam · Atelier K',
     items: 'FORGE Studio Creator 2026 (Prebuilt System)',
-    itemsList: [{ id: 'pb4', type: 'kit', name: 'FORGE Studio Creator 2026', spec: 'Ryzen 9 9950X · RTX 5080 16GB · 64GB DDR5-6000', price: 3493, qty: 1, asm: 0, img: 'img/products/pb4.png' }],
+    itemsList: [{ id: 'pb4', type: 'kit', name: 'FORGE Studio Creator 2026', spec: 'Ryzen 9 9950X · RTX 5080 16GB · 64GB DDR5-6000', price: 3493, qty: 1, asm: 0, img: 'img/products/pb4.webp' }],
     total: 3493,
     stage: 5,
     status: 'Dispatched',
@@ -229,10 +232,21 @@ const FALLBACK_ORDERS = [
     date: '2026-11-16',
     customer: 'Ryan Cheung',
     items: 'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)',
-    itemsList: [{ id: 'pb2', type: 'build', name: 'Custom 3D Build · Apex Edition', spec: 'Ryzen 7 9800X3D · RTX 5070 Ti · HydroShift 360 + UNI FAN LCD', price: 2625, qty: 1, asm: 99, img: 'img/products/pb2.png', items: ['c3', 'm4', 'r2', 'g4', 's2', 'p2', 'k3', 'x1', 'a1', 'a4', 'a2'] }],
+    itemsList: [{ id: 'pb2', type: 'build', name: 'Custom 3D Build · Apex Edition', spec: 'Ryzen 7 9800X3D · RTX 5070 Ti · HydroShift 360 + UNI FAN LCD', price: 2625, qty: 1, asm: 99, img: 'img/products/pb2.webp', items: ['c3', 'm4', 'r2', 'g4', 's2', 'p2', 'k3', 'x1', 'a1', 'a4', 'a2'] }],
     total: 2724,
     stage: 3,
     status: 'In Assembly',
+    delivery: 'Mong Kok Sino Centre Showroom Pickup'
+  },
+  {
+    id: 'FG-8190',
+    date: '2026-11-17',
+    customer: 'Daniel Kwok',
+    items: 'Custom 3D Build (Core Ultra 7 265K · RTX 5070 · Seasonic GX-850)',
+    itemsList: [{ id: 'custom-8190', type: 'build', name: 'Custom 3D Build · Stealth 265K', spec: 'Core Ultra 7 265K · RTX 5070 12GB · Seasonic Focus GX-850 · Arctic Freezer III 360', price: 2151, qty: 1, asm: 99, img: 'img/products/x5.webp', items: ['c1', 'm2', 'r2', 'g3', 's2', 'p2', 'k4', 'x5', 'a1'] }],
+    total: 2250,
+    stage: 4,
+    status: '24h OCCT Burn-In',
     delivery: 'Mong Kok Sino Centre Showroom Pickup'
   }
 ];
@@ -346,7 +360,7 @@ function renderRack() {
     { bay: 'BAY-01', order: orders[0] || FALLBACK_ORDERS[0], cpu: '61°C', gpu: '58°C', pct: 86, state: 'OCCT 20.6h / 24h' },
     { bay: 'BAY-02', order: orders[1] || FALLBACK_ORDERS[1], cpu: '54°C', gpu: '55°C', pct: 100, state: 'Passed · Signed Off' },
     { bay: 'BAY-03', order: orders[2] || FALLBACK_ORDERS[2], cpu: '59°C', gpu: '56°C', pct: 64, state: 'OCCT 15.4h / 24h' },
-    { bay: 'BAY-04', order: orders[3] || { id: 'FG-8190', items: 'Core Ultra 7 265K · RTX 5070 · RM850e' }, cpu: '49°C', gpu: '51°C', pct: 38, state: 'Loop Flush & EXPO' }
+    { bay: 'BAY-04', order: orders[3] || FALLBACK_ORDERS[3], cpu: '49°C', gpu: '51°C', pct: 38, state: 'Loop Flush & EXPO' }
   ];
   $('#burnInRack').innerHTML = bays.map(b => {
     const ok = b.pct >= 100;

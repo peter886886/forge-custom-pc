@@ -154,19 +154,45 @@ function makeLabelTex(opts) {
   }
   if (opts.tag) {
     ctx.fillStyle = opts.tagColor || '#E5A93C';
-    ctx.font = `bold ${Math.round(H * 0.09)}px monospace`;
-    ctx.fillText(opts.tag, 22, Math.round(H * 0.22));
+    ctx.font = `bold ${opts.tagSize || Math.round(H * 0.09)}px monospace`;
+    if (opts.center) {
+      ctx.textAlign = 'center';
+      ctx.fillText(opts.tag, W / 2, Math.round(H * 0.24));
+    } else {
+      ctx.textAlign = 'left';
+      ctx.fillText(opts.tag, 22, Math.round(H * 0.22));
+    }
   }
   if (opts.title) {
     ctx.fillStyle = opts.titleColor || '#F5F5F5';
     ctx.font = `bold ${opts.titleSize || Math.round(H * 0.20)}px sans-serif`;
-    ctx.fillText(opts.title, 22, Math.round(H * 0.54));
+    if (opts.center) {
+      ctx.textAlign = 'center';
+      ctx.fillText(opts.title, W / 2, Math.round(H * 0.56));
+    } else {
+      ctx.textAlign = 'left';
+      ctx.fillText(opts.title, 22, Math.round(H * 0.54));
+    }
   }
   if (opts.sub) {
     ctx.fillStyle = opts.subColor || '#A1A1AA';
-    ctx.font = `bold ${opts.subSize || Math.round(H * 0.11)}px monospace`;
-    ctx.fillText(opts.sub, 22, Math.round(H * 0.78));
+    const subStr = String(opts.sub);
+    let subPx = opts.subSize || Math.round(H * 0.11);
+    ctx.font = `bold ${subPx}px monospace`;
+    const maxW = opts.center ? W * 0.72 : (W - 44);
+    while (subPx > 11 && ctx.measureText(subStr).width > maxW) {
+      subPx -= 1;
+      ctx.font = `bold ${subPx}px monospace`;
+    }
+    if (opts.center) {
+      ctx.textAlign = 'center';
+      ctx.fillText(subStr, W / 2, Math.round(H * 0.78));
+    } else {
+      ctx.textAlign = 'left';
+      ctx.fillText(subStr, 22, Math.round(H * 0.78));
+    }
   }
+  ctx.textAlign = 'left';
   const t = new THREE.CanvasTexture(c);
   t.anisotropy = 4;
   t.encoding = THREE.sRGBEncoding;
@@ -617,16 +643,17 @@ function wireGlbInstance(root, opts) {
       } else if (nm.indexOf('PSU') !== -1) {
         tex = makeLabelTex({
           w: 512, h: 256, bg: '#0D0D0D', border: pid === 'p5' ? '#E5A93C' : '#10B981',
-          tag: 'ATX 3.1 · PCIe 5.1', title: `${part.cap || 850}W`, sub: (part.name || 'FORGE PSU').slice(0, 22)
+          tag: 'ATX 3.1 · PCIe 5.1', title: `${part.cap || 850}W`, sub: part.name || 'FORGE PSU', subSize: 24
         });
       } else if (nm.indexOf('UniFan') !== -1 || pid === 'a2') {
-        tex = makeLabelTex({ w: 128, h: 128, bg: '#0A0A0A', border: '#E5A93C', title: '31°C', sub: '1400 RPM' });
+        tex = makeLabelTex({ w: 128, h: 128, bg: '#0A0A0A', border: '#E5A93C', center: true, title: '31°C', sub: '1400 RPM' });
       } else if (nm.indexOf('HS_IPS') !== -1 || pid === 'k3') {
         tex = makeTelemetryScreenTex('k3', 'HYDROSHIFT 2.88" IPS · 31°C');
       } else {
+        const shortAio = (part.name || '360 AIO').replace('NZXT Kraken Elite 360 RGB', 'KRAKEN 360').replace('Arctic Liquid Freezer III 360', 'FREEZER III').slice(0, 14);
         tex = makeLabelTex({
-          w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C',
-          tag: 'LIQUID TEMP', title: '31°C', sub: (part.name || '360 AIO').slice(0, 16)
+          w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', center: true,
+          tag: 'LIQUID TEMP', tagSize: 20, title: '31°C', titleSize: 58, sub: shortAio, subSize: 22
         });
         if (nm.indexOf('AIO_PumpScreen') !== -1) {
           tex.center.set(0.5, 0.5);
@@ -1128,9 +1155,10 @@ function createPC(canvas, opts) {
         ring.position.set(-0.44, 1.25, -0.50);
         g.add(ring);
 
+        const shortAio = (build.cool.name || '360 AIO').replace('NZXT Kraken Elite 360 RGB', 'KRAKEN 360').replace('Arctic Liquid Freezer III 360', 'FREEZER III').slice(0, 14);
         const lcdTex = (kid === 'k3')
           ? makeTelemetryScreenTex('k3', 'HYDROSHIFT 2.88" IPS · 31°C')
-          : makeLabelTex({ w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', tag: 'LIQUID TEMP', title: '31°C', sub: build.cool.name.slice(0, 16) });
+          : makeLabelTex({ w: 256, h: 256, bg: '#0A0A0A', border: '#E5A93C', center: true, tag: 'LIQUID TEMP', tagSize: 20, title: '31°C', titleSize: 58, sub: shortAio, subSize: 22 });
         const lcdGeo = (kid === 'k3') ? new THREE.BoxGeometry(0.016, 0.44, 0.44) : new THREE.CircleGeometry(0.24, 32);
         const lcd = new THREE.Mesh(lcdGeo, new THREE.MeshBasicMaterial({ map: lcdTex }));
         if (kid !== 'k3') lcd.rotation.y = Math.PI / 2;
@@ -1589,12 +1617,16 @@ function createPC(canvas, opts) {
   clearAndBuild(currentBuild);
   loop();
 
-  window.addEventListener('resize', () => {
-    const w = canvas.clientWidth || 600, h = canvas.clientHeight || 520;
+  const syncSize = () => {
+    const w = canvas.clientWidth || 600, h = canvas.clientHeight || 340;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-  });
+  };
+  window.addEventListener('resize', syncSize);
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
 
   const api = {
     get glass() { return glassVisible; },

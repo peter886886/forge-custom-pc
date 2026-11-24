@@ -4,13 +4,14 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Login | FORGE</title>
 <meta name="description" content="Customer and staff login for FORGE.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
 <section class="phero"><div class="wrap" style="max-width:440px">
  <div class="card reveal">
-  <h2 class="center">Welcome <span class="grad">back</span></h2>
+  <h1 class="center" style="font-size:clamp(1.75rem,3vw,2.2rem);margin-bottom:4px">Welcome <span class="grad">back</span></h1>
   <div class="tabs" style="margin-top:16px"><button type="button" class="on" data-r="customer">Customer</button><button type="button" data-r="staff">Staff</button></div>
   <form id="lf" novalidate style="display:grid;gap:14px">
    <div class="field"><label for="u" id="ul">Email</label><input id="u" data-rule="req" autocomplete="username"><div class="err"></div></div>
@@ -20,7 +21,7 @@
    <p class="err center" id="msg" style="min-height:18px"></p>
   </form>
   <p class="center mut" id="reg" style="margin-top:8px;font-size:.875rem">New here? <a href="register.html">Create an account</a></p>
-  <p class="center mut" style="font-size:.78rem;margin-top:12px">Demo — Customer: <b>demo@forge.hk / Forge2026</b><br>Staff: <b>staff01 / Admin@2026</b></p>
+  <p class="center mut" style="font-size:.78rem;margin-top:12px">Demo — Customer: <b>demo@forge.hk / Forge2026</b><br>Staff: <b>staff01 / Admin@2026</b><br><span style="font-size:.72rem">(Newly registered demo emails sign in locally via browser session.)</span></p>
   <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px">
    <button type="button" class="chip sm" id="demoCust">Customer Demo</button>
    <button type="button" class="chip sm" id="demoStaff">Staff Demo</button>

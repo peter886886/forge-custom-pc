@@ -13,7 +13,8 @@
    - High-fidelity WebGL / Three.js 3D PC assembly stage backed by Blender `.glb` hardware models and PMREM studio lighting.
    - 360° turntable orbit, zoom, pan, and exploded assembly view (`Explode`).
    - Thermal airflow simulation (`Airflow`), side glass toggle (`Glass`), auto-rotation (`Spin`), and screenshot capture (`Snapshot`).
-   - Dynamic real-time wattage calculation, 3DMark score estimation, and 1080p / 1440p / 4K gaming FPS telemetry.
+   - Dynamic real-time wattage calculation, PSU efficiency sweet-spot telemetry, socket/clearance badges, 3DMark score estimation, and 1080p / 1440p / 4K gaming FPS telemetry.
+   - Shareable 3D build URLs (`builder.html?parts=...`) and printable custom specification sheets (`Print Spec`).
    - Full compatibility rules: CPU socket matching (`LGA1851` / `AM5` / `LGA1700`), cooler clearance, PSU headroom, and multi-accessory add-on installation.
 
 2. **Full Hardware Catalog & Modding Accessories (`products.html` & `product-detail.html`)**
@@ -30,7 +31,7 @@
 4. **Engineered Aesthetics & Performance**
    - Pure Carbon dark mode design system (`#0A0A0A` / `#121212` / `#161616` / `#1F1F1F`) with Warm Gold (`#E5A93C`), Emerald (`#10B981`), and Signal Orange (`#FF7A17`) accents.
    - Zero external framework dependencies; pure HTML5, CSS3, vanilla JavaScript, and Three.js (`GLTFLoader`).
-   - Keyboard command palette (`Cmd+K` / `Ctrl+K`), Web Audio tactile feedback toggle, and responsive mobile adaptation.
+   - Keyboard command palette (`Cmd+K` / `Ctrl+K`), keyboard shortcuts overlay (`?`), skip-to-content navigation, WebP optimized imagery with lazy loading, Web Audio tactile feedback toggle, and responsive mobile adaptation.
 
 ---
 

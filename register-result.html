@@ -4,18 +4,19 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Registration Complete | FORGE</title>
 <meta name="description" content="Your FORGE membership details.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
-<section class="phero"><div class="wrap formbox card center reveal">
+<section class="phero"><div class="wrap formbox card center reveal" id="regCard">
  <div class="check"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
  <h1>Welcome to <span class="grad">FORGE</span>, <span id="hi"></span>!</h1>
  <p class="mut">Please check the details you submitted:</p>
  <div class="tblwrap" style="margin:24px 0 16px;text-align:left"><table><tbody id="r"></tbody></table></div>
  <p style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.28);color:var(--ok);font-family:var(--mono);font-size:.76rem;margin:0 auto 22px">
-  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-  <span>Password excluded from URL query string · Stored in local demo session only</span>
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  <span>Form details received via URL parameters · Password omitted from URL</span>
  </p>
  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
   <a class="btn solid" href="login.html">Log in now</a>
@@ -25,9 +26,34 @@
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
-<script>const p=new URLSearchParams(location.search),memberId=ticket('FG-MBR');$('#hi').textContent=p.get('fname')||'member';
-fillResult($('#r'),{fname:'First name',lname:'Last name',email:'Email',phone:'Phone',dob:'Date of birth',gender:'Gender',district:'District',newsletter:'Newsletter'});
-const tr=document.createElement('tr');tr.innerHTML='<td>Interests</td><td></td>';tr.lastChild.textContent=p.getAll('use').join(', ')||'—';$('#r').append(tr);
-$('#r').insertAdjacentHTML('afterbegin',`<tr><td>Member ID</td><td><b style="font-family:var(--mono)">${esc(memberId)}</b></td></tr>`);</script>
+<script>
+const p = new URLSearchParams(location.search);
+const hasRegData = !!(p.get('fname') || p.get('lname') || p.get('email'));
+if (!hasRegData) {
+  $('#regCard').innerHTML = `
+    <div style="width:56px;height:56px;border-radius:14px;background:#1A1A1A;border:1px solid var(--line-hi);display:grid;place-items:center;color:var(--mut);margin:0 auto 16px">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+    </div>
+    <h1>No Registration <span class="grad">Submitted</span></h1>
+    <p class="mut" style="margin:10px auto 22px;max-width:44ch">Complete the membership registration form to view your confirmation summary and unlock 5% off hardware, Free Diagnostics ($0), and 10% off lab services.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn solid" href="register.html">Go to Registration Form</a>
+      <a class="btn outline" href="login.html">Member Login</a>
+    </div>`;
+} else {
+  const memberId = ticket('FG-MBR');
+  $('#hi').textContent = p.get('fname') || 'member';
+  fillResult($('#r'), { fname: 'First name', lname: 'Last name', email: 'Email', phone: 'Phone', dob: 'Date of birth', gender: 'Gender', district: 'District' });
+  const nlTr = document.createElement('tr');
+  nlTr.innerHTML = '<th scope="row">Newsletter</th><td></td>';
+  nlTr.lastChild.textContent = p.get('newsletter') ? 'Yes' : 'No';
+  $('#r').append(nlTr);
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<th scope="row">Interests</th><td></td>';
+  tr.lastChild.textContent = p.getAll('use').join(', ') || '—';
+  $('#r').append(tr);
+  $('#r').insertAdjacentHTML('afterbegin', `<tr><th scope="row">Member ID</th><td><b style="font-family:var(--mono)">${esc(memberId)}</b></td></tr>`);
+}
+</script>
 </body>
 </html>

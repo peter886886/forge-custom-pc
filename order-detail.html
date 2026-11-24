@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Order Tracking &amp; Invoice | FORGE</title>
 <meta name="description" content="Track your FORGE custom PC build progress across all 5 Kwun Tong lab stages and print your official itemized invoice.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -93,7 +94,7 @@ function renderOrderPage() {
       price: Number(order.total) || 0,
       qty: 1,
       asm: 0,
-      img: 'img/renders/hero_rig_studio.png'
+      img: 'img/renders/hero_rig_studio.webp'
     }];
   }
 
@@ -119,9 +120,9 @@ function renderOrderPage() {
   const tamperHtml = order.tamperBlocked
     ? `<div role="alert" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:12px 16px;margin-bottom:20px">
         <div style="font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">Order Price Verification Alert</div>
-        <p style="font-size:.86rem;color:#FCA5A5">Catalog integrity safeguard blocked a mismatched checkout parameter (${order.submittedTotal !== undefined ? esc(money(order.submittedTotal)) : 'tampered input'}) and enforced authoritative catalog pricing (${esc(money(order.total))}).</p>
+        <p style="font-size:.86rem;color:#FCA5A5">Catalog price verification adjusted a mismatched checkout parameter (${order.submittedTotal !== undefined ? esc(money(order.submittedTotal)) : 'mismatched input'}) and applied the official catalog total (${esc(money(order.total))} USD).</p>
       </div>`
-    : `<div style="margin-bottom:18px"><span class="status s-ok">Catalog Price Integrity Verified</span></div>`;
+    : `<div style="margin-bottom:18px"><span class="status s-ok">Catalog Price Verified</span></div>`;
 
   const manifestRows = itemsList.map(it => {
     const qty = Math.max(1, Number(it.qty) || 1);
@@ -130,7 +131,7 @@ function renderOrderPage() {
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:12px">
-            <img class="no-print" src="${esc(it.img || 'img/renders/hero_rig_studio.png')}" alt="${esc(it.name)}" style="width:44px;height:44px;object-fit:contain;background:#111111;border:1px solid var(--line);border-radius:6px;padding:4px;flex-shrink:0">
+            <img class="no-print" src="${esc(normalizeImgPath(it.img || 'img/renders/hero_rig_studio.webp'))}" alt="${esc(it.name)}" loading="lazy" decoding="async" style="width:44px;height:44px;object-fit:contain;background:#111111;border:1px solid var(--line);border-radius:6px;padding:4px;flex-shrink:0">
             <div>
               <b>${esc(it.name)}</b>
               ${it.asm ? `<div class="mut" style="font-family:var(--mono);font-size:.72rem">+${money(it.asm)} Lab Assembly &amp; Burn-In</div>` : ''}
@@ -210,7 +211,7 @@ function renderOrderPage() {
       <div class="tblwrap" style="margin-bottom:18px">
         <table>
           <thead>
-            <tr><th>Item / Build</th><th>Specification</th><th>Qty</th><th>Unit</th><th>Line Total</th></tr>
+            <tr><th scope="col">Item / Build</th><th scope="col">Specification</th><th scope="col">Qty</th><th scope="col">Unit (USD)</th><th scope="col">Line Total (USD)</th></tr>
           </thead>
           <tbody>
             ${manifestRows}

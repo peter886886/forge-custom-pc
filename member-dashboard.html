@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>My Account | FORGE</title>
 <meta name="description" content="FORGE member dashboard — benefit tier, saved 3D builds, and live order tracking.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -11,7 +12,7 @@
 <section><div class="wrap sidebar">
  <aside class="side card">
   <p class="eyebrow">Member Portal</p>
-  <h3 id="nm" style="margin-bottom:4px"></h3>
+  <p id="nm" style="font-size:1.1rem;font-weight:600;color:var(--txt);margin-bottom:4px"></p>
   <p class="mut" id="em" style="font-size:.78rem;font-family:var(--mono);margin-bottom:14px"></p>
   <a class="on" href="#benefits">Benefits &amp; Overview</a>
   <a href="#builds">Saved Builds</a>
@@ -22,12 +23,13 @@
   <a href="#" id="out">Log Out</a>
  </aside>
  <div style="min-width:0">
+  <h1 style="font-size:clamp(1.75rem,3vw,2.4rem);margin-bottom:16px">Member <span class="grad">Dashboard</span></h1>
   <!-- Member Benefit Tier Card -->
   <div class="card reveal" id="benefits" style="margin-bottom:28px;border-color:var(--line-hi)">
    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap">
     <div>
      <span class="tag amber" style="margin-bottom:8px">FORGE Member · Active Tier</span>
-     <h2 style="font-size:1.45rem;margin-bottom:6px">5% Hardware &amp; Custom Build Discount · 10% Lab Service Discount</h2>
+     <h2 style="font-size:1.35rem;margin-bottom:6px">5% Off Hardware · Free Diagnostics ($0) · 10% Off Lab Services</h2>
      <p class="mut" style="font-size:.88rem">Applied automatically at checkout across all 53 components, custom 3D builds, and Kwun Tong lab engineering services, alongside our 3-year on-site Hong Kong warranty.</p>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -60,7 +62,7 @@
   </div>
   <div class="tblwrap" style="margin-top:14px">
    <table>
-    <thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Stage</th><th>Action</th></tr></thead>
+    <thead><tr><th scope="col">Order</th><th scope="col">Date</th><th scope="col">Items</th><th scope="col">Total (USD)</th><th scope="col">Stage</th><th scope="col">Action</th></tr></thead>
     <tbody id="ol"></tbody>
    </table>
   </div>
@@ -93,7 +95,8 @@ const STAGE_MAP = {
 const FALLBACK_ORDERS = [
   { id: 'FG-8419', date: '2026-11-15', items: 'FORGE Titan Ultra 2026 (Prebuilt System)', total: 5353, stage: 4, status: '24h OCCT Burn-In' },
   { id: 'FG-8372', date: '2026-11-12', items: 'FORGE Studio Creator 2026 (Prebuilt System)', total: 3493, stage: 5, status: 'Dispatched' },
-  { id: 'FG-8295', date: '2026-11-16', items: 'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)', total: 2724, stage: 3, status: 'In Assembly' }
+  { id: 'FG-8295', date: '2026-11-16', items: 'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)', total: 2724, stage: 3, status: 'In Assembly' },
+  { id: 'FG-8190', date: '2026-11-17', items: 'Custom 3D Build (Core Ultra 7 265K · RTX 5070 · Seasonic GX-850)', total: 2250, stage: 4, status: '24h OCCT Burn-In' }
 ];
 
 function getMemberOrders() {
@@ -130,7 +133,7 @@ window.addSavedBuild = function(idx) {
     spec: `${ids.length} components · Custom 3D Rig`,
     price: Number(b.total) || 0,
     qty: 1,
-    img: b.img || 'img/renders/hero_rig_studio.png',
+    img: b.img || 'img/renders/hero_rig_studio.webp',
     asm: 99,
     items: ids
   };
@@ -168,7 +171,7 @@ $('#bl').innerHTML = B.map((b, idx) => {
   const href = matchedKit ? `builder.html?kit=${encodeURIComponent(matchedKit.id)}` : (ids.length ? 'builder.html?edit=1' : 'builder.html');
   const highlights = ids.map(id => byId(id)).filter(p => p && ['cpu', 'gpu', 'case'].includes(p.cat)).map(p => p.name).slice(0, 3);
   return `<div class="card" style="display:flex;flex-direction:column">
-    <img src="${esc(b.img || 'img/renders/hero_rig_studio.png')}" alt="Saved build" style="width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;border:1px solid var(--line);background:#111111">
+    <img src="${esc(normalizeImgPath(b.img || 'img/renders/hero_rig_studio.webp'))}" alt="Saved build" loading="lazy" decoding="async" style="width:100%;height:170px;object-fit:cover;border-radius:10px;margin-bottom:12px;border:1px solid var(--line);background:#111111">
     <b class="price">${money(b.total || 0)}</b>
     <p class="mut" style="font-size:.84rem;margin-top:4px">${ids.length} parts · ${esc(b.date || '')}</p>
     ${highlights.length ? `<p class="mut" style="font-size:.78rem;margin:6px 0 14px">${esc(highlights.join(' · '))}</p>` : '<div style="margin-bottom:14px"></div>'}

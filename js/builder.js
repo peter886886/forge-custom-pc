@@ -72,7 +72,7 @@ function render() {
           const bad = compat(x);
           const isSel = isAcc ? accs.some(a => a.id === x.id) : (p && p.id === x.id);
           return `<div class="opt ${isSel ? 'sel' : ''} ${bad ? 'no' : ''}" data-id="${x.id}" title="${esc(bad)}" style="display:flex;align-items:center;gap:10px">
-            <img src="img/products/${x.id}.png" style="width:40px;height:40px;object-fit:contain;background:#111111;border-radius:6px;padding:3px;border:1px solid var(--line);flex-shrink:0" alt="${esc(x.name)}">
+            <img src="img/products/${x.id}.webp" style="width:40px;height:40px;object-fit:contain;background:#111111;border-radius:6px;padding:3px;border:1px solid var(--line);flex-shrink:0" alt="${esc(x.name)}" loading="lazy" decoding="async">
             <span style="flex:1">${esc(x.name)}<br><small class="mut">${esc(bad || x.spec)}</small></span>
             <b style="flex-shrink:0">${money(x.price)}</b>
           </div>`;
@@ -198,6 +198,60 @@ function stats() {
   $('#warn').textContent = warn;
   $('#warn').classList.toggle('bad', !!(cap && w > cap * 0.9));
   $('#warn').style.color = cap && w > cap * 0.9 ? 'var(--danger)' : miss ? 'var(--mut)' : 'var(--ok)';
+
+  // Real-time Compatibility & PSU Efficiency Telemetry Badges
+  const sockEl = $('#compatSocket');
+  if (sockEl) {
+    sockEl.className = 'telemetry-pill';
+    if (sel.cpu && sel.mb) {
+      if (sel.cpu.socket === sel.mb.socket) {
+        sockEl.classList.add('ok');
+        sockEl.innerHTML = `Socket <b>${esc(sel.cpu.socket)} OK</b>`;
+      } else {
+        sockEl.classList.add('bad');
+        sockEl.innerHTML = `Socket <b>Mismatch</b>`;
+      }
+    } else if (sel.cpu || sel.mb) {
+      sockEl.classList.add('warn');
+      sockEl.innerHTML = `Socket <b>${esc((sel.cpu || sel.mb).socket)} Pending</b>`;
+    } else {
+      sockEl.innerHTML = `Socket <b>Select CPU/MB</b>`;
+    }
+  }
+
+  const clearEl = $('#compatClear');
+  if (clearEl) {
+    clearEl.className = 'telemetry-pill';
+    if (sel.case && sel.gpu && sel.cool) {
+      clearEl.classList.add('ok');
+      clearEl.innerHTML = `Clearance <b>Verified</b>`;
+    } else {
+      clearEl.innerHTML = `Clearance <b>Checking…</b>`;
+    }
+  }
+
+  const psuEl = $('#compatPsu');
+  if (psuEl) {
+    psuEl.className = 'telemetry-pill';
+    if (cap > 0) {
+      const pct = Math.round((w / cap) * 100);
+      if (pct > 90) {
+        psuEl.classList.add('bad');
+        psuEl.innerHTML = `PSU <b>${pct}% Overload</b>`;
+      } else if (pct > 75) {
+        psuEl.classList.add('warn');
+        psuEl.innerHTML = `PSU <b>${pct}% High Load</b>`;
+      } else if (pct >= 45) {
+        psuEl.classList.add('ok');
+        psuEl.innerHTML = `PSU <b>${pct}% Optimal</b>`;
+      } else {
+        psuEl.classList.add('ok');
+        psuEl.innerHTML = `PSU <b>${pct}% Quiet</b>`;
+      }
+    } else {
+      psuEl.innerHTML = `PSU <b>Select Unit</b>`;
+    }
+  }
 }
 
 $$('#resTabs button').forEach(b => b.onclick = () => {
@@ -207,8 +261,8 @@ $$('#resTabs button').forEach(b => b.onclick = () => {
   stats();
 });
 
-// Colour pickers (synced with global accent theme)
-const RGBS = ['#E5A93C', '#38BDF8', '#10B981', '#FF7A17', '#F59E0B', '#FFFFFF'], CASES = ['#161615', '#e8e8e6', '#1c1917', '#242422', '#1f2922'];
+// Colour pickers (Pure Carbon + Warm Metallic palette — zero cyan/purple cast)
+const RGBS = ['#E5A93C', '#F5E6C8', '#10B981', '#FF7A17', '#F59E0B', '#FFFFFF'], CASES = ['#161615', '#e8e8e6', '#1c1917', '#242422', '#1f2922'];
 let caseCol = null;
 const initHex = (typeof getTheme === 'function' ? getTheme().hex : '#E5A93C').toUpperCase();
 $('#rgbSw').innerHTML = RGBS.map(c => `<button style="background:${c};color:${c}" data-c="${c}" class="${c.toUpperCase() === initHex ? 'on' : ''}" aria-label="RGB ${c}"></button>`).join('');
@@ -263,6 +317,112 @@ $('#bShot').onclick = () => {
   $('#shotDl').href = u;
   $('#shotModal').classList.add('show');
 };
+
+function currentPartIds() {
+  const ids = [];
+  ORDER.forEach(c => {
+    if (!sel[c]) return;
+    if (Array.isArray(sel[c])) sel[c].forEach(x => ids.push(x.id));
+    else ids.push(sel[c].id);
+  });
+  return ids;
+}
+
+function buildShareUrl() {
+  const ids = currentPartIds();
+  const base = location.href.split('?')[0].split('#')[0];
+  return ids.length ? `${base}?parts=${ids.join(',')}` : base;
+}
+
+const bShareBtn = $('#bShare');
+if (bShareBtn) {
+  bShareBtn.onclick = () => {
+    const ids = currentPartIds();
+    if (!ids.length) {
+      sfx('warn');
+      return toast('Select components before sharing a build');
+    }
+    const shareUrl = buildShareUrl();
+    try { history.replaceState(null, '', `?parts=${ids.join(',')}`); } catch (e) {}
+    const copyFallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).catch(copyFallback);
+    } else {
+      copyFallback();
+    }
+    sfx('install');
+    toast(`Shareable build URL copied (${ids.length} parts)`);
+  };
+}
+
+function renderPrintSpecSheet() {
+  const sheet = $('#printSpecSheet');
+  if (!sheet) return;
+  const parts = allSelectedParts();
+  const w = totalWatt();
+  const cap = sel.psu ? sel.psu.cap : 0;
+  const pct = cap ? Math.round((w / cap) * 100) : 0;
+  const sub = totalPrice();
+  const rowsHtml = parts.map(p => `
+    <tr>
+      <td>${esc(CATS[p.cat] || p.cat)}</td>
+      <td><b>${esc(p.name)}</b></td>
+      <td>${esc(p.spec)}</td>
+      <td style="font-family:var(--mono)">${p.watt ? p.watt + 'W' : (p.cap ? p.cap + 'W Cap' : '—')}</td>
+      <td style="font-family:var(--mono);text-align:right">${money(p.price)}</td>
+    </tr>`).join('');
+  sheet.innerHTML = `
+    <div style="padding-bottom:12px;margin-bottom:16px;border-bottom:2px solid #111111;display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h2 style="margin:0;font-size:18pt;letter-spacing:0.08em">FORGE CUSTOM PC LTD.</h2>
+        <p style="font-size:9.5pt;margin-top:4px">Custom 3D Build Specification &amp; Lab Telemetry Sheet</p>
+        <p style="font-size:8.5pt;color:#52525B">Showroom: Shop 12, 3/F, Sino Centre, Mong Kok · Lab: Unit 804, Kwun Tong Industrial Centre</p>
+      </div>
+      <div style="text-align:right;font-family:monospace;font-size:9pt">
+        <b>SPECIFICATION SHEET</b><br>
+        Generated: ${new Date().toISOString().slice(0, 10)}<br>
+        Parts: ${parts.length} modules
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-bottom:16px">
+      <table>
+        <thead><tr><th scope="col">Category</th><th scope="col">Component</th><th scope="col">Specification</th><th scope="col">Power</th><th scope="col" style="text-align:right">Price (USD)</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div class="g2" style="gap:16px;align-items:start">
+      <div class="card" style="padding:12px">
+        <p style="font-weight:600;margin-bottom:6px">Compatibility &amp; Telemetry</p>
+        <p style="font-size:9.5pt">Socket: ${esc(sel.cpu?.socket || sel.mb?.socket || '—')} · Est. Load: ${w}W${cap ? ` / ${cap}W (${pct}%)` : ''}</p>
+        <p style="font-size:9.5pt">Thermal Est.: ${esc($('#tempEst').textContent)} · Acoustic Floor: ${esc($('#noiseEst').textContent)}</p>
+        <p style="font-size:9.5pt">Est. FPS: Cyberpunk ${esc($('#fps1').textContent)} · Wukong ${esc($('#fps2').textContent)} · Valorant ${esc($('#fps3').textContent)}</p>
+      </div>
+      <div class="card" style="padding:12px">
+        <p style="font-weight:600;margin-bottom:6px">Estimated Pricing (USD)</p>
+        <p style="font-size:9.5pt">Components Subtotal: <b>${money(sub)}</b></p>
+        <p style="font-size:9.5pt">Single-Tech Assembly &amp; 24h OCCT Burn-In: <b>$99</b></p>
+        <p style="font-size:11pt;margin-top:6px">Estimated Build Total: <b>${money(sub + 99)} USD</b></p>
+      </div>
+    </div>
+    <p style="font-size:8pt;color:#52525B;margin-top:12px;word-break:break-all">Share URL: ${esc(buildShareUrl())}</p>`;
+}
+
+const bPrintBtn = $('#bPrint');
+if (bPrintBtn) {
+  bPrintBtn.onclick = () => {
+    renderPrintSpecSheet();
+    window.print();
+  };
+}
 
 // Expand All / Collapse All Toggle
 const toggleBtn = $('#toggleAll');
@@ -354,7 +514,7 @@ if (bAddCartBtn) {
       price: p.total,
       qty: 1,
       asm: 99,
-      img: p.img || 'img/renders/hero_rig_studio.png',
+      img: p.img || 'img/renders/hero_rig_studio.webp',
       items: p.items
     });
   };
@@ -376,7 +536,18 @@ addEventListener('keydown', e => {
 });
 
 const q = qs();
-if (q.edit === '1') {
+if (q.parts) {
+  const partIds = String(q.parts).split(',').map(s => s.trim()).filter(Boolean);
+  const validParts = partIds.map(byId).filter(p => p && !p.parts);
+  if (validParts.length) {
+    ORDER.forEach(c => { delete sel[c]; pc.set(c, null); });
+    validParts.forEach(p => pick(p, true));
+    render();
+    toast(`Shared 3D build loaded (${validParts.length} parts)`);
+  } else {
+    loadKit('pb2');
+  }
+} else if (q.edit === '1') {
   let customIds = null;
   try { customIds = JSON.parse(localStorage.getItem('forgeEditBuild') || 'null'); } catch (e) {}
   if (Array.isArray(customIds) && customIds.length) {

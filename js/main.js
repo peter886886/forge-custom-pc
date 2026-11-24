@@ -8,6 +8,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const money=n=>'$'+Number(n).toLocaleString('en-US');
 const qs=()=>Object.fromEntries(new URLSearchParams(location.search));
 const user=()=>JSON.parse(localStorage.getItem('forgeUser')||'null');
+const normalizeImgPath=s=>typeof s==='string'?s.replace(/^(img\/.+)\.png$/i,'$1.webp'):'img/renders/hero_rig_studio.webp';
 
 /* Lucide Vector Icons (stroke-width 1.75, zero emojis) */
 const ICONS={
@@ -86,7 +87,7 @@ const SEED_ORDERS=[
   total:5353,
   date:'2026-11-15',
   items:'FORGE Titan Ultra 2026 (Prebuilt System)',
-  itemsList:[{id:'pb3',type:'kit',name:'FORGE Titan Ultra 2026',spec:'Core Ultra 9 285K · RTX 5090 32GB · 64GB DDR5-7200 · 4TB Gen5',price:5353,qty:1,asm:0,img:'img/products/pb3.png'}],
+  itemsList:[{id:'pb3',type:'kit',name:'FORGE Titan Ultra 2026',spec:'Core Ultra 9 285K · RTX 5090 32GB · 64GB DDR5-7200 · 4TB Gen5',price:5353,qty:1,asm:0,img:'img/products/pb3.webp'}],
   customer:'Kenji Leung',
   address:'Suite 2408, Two International Finance Centre, Central, Hong Kong',
   pay:'FPS (Faster Payment System)',
@@ -101,7 +102,7 @@ const SEED_ORDERS=[
   total:3493,
   date:'2026-11-12',
   items:'FORGE Studio Creator 2026 (Prebuilt System)',
-  itemsList:[{id:'pb4',type:'kit',name:'FORGE Studio Creator 2026',spec:'Ryzen 9 9950X · RTX 5080 16GB · 64GB DDR5-6000 · Noctua G2',price:3493,qty:1,asm:0,img:'img/products/pb4.png'}],
+  itemsList:[{id:'pb4',type:'kit',name:'FORGE Studio Creator 2026',spec:'Ryzen 9 9950X · RTX 5080 16GB · 64GB DDR5-6000 · Noctua G2',price:3493,qty:1,asm:0,img:'img/products/pb4.webp'}],
   customer:'Chloe Tam · Atelier K',
   address:'Unit 1602, Dorset House, Taikoo Place, Quarry Bay, Hong Kong',
   pay:'Visa / Mastercard',
@@ -116,7 +117,7 @@ const SEED_ORDERS=[
   total:2724,
   date:'2026-11-16',
   items:'Custom 3D Build (9800X3D · RTX 5070 Ti · UNI FAN TL LCD)',
-  itemsList:[{id:'pb2',type:'build',name:'Custom 3D Build · Apex Edition',spec:'Ryzen 7 9800X3D · RTX 5070 Ti · 32GB DDR5-6400 · HydroShift 360 + UNI FAN LCD',price:2625,qty:1,asm:99,img:'img/products/pb2.png',items:['c3','m4','r2','g4','s2','p2','k3','x1','a1','a4','a2']}],
+  itemsList:[{id:'pb2',type:'build',name:'Custom 3D Build · Apex Edition',spec:'Ryzen 7 9800X3D · RTX 5070 Ti · 32GB DDR5-6400 · HydroShift 360 + UNI FAN LCD',price:2625,qty:1,asm:99,img:'img/products/pb2.webp',items:['c3','m4','r2','g4','s2','p2','k3','x1','a1','a4','a2']}],
   customer:'Ryan Cheung',
   address:'Flat C, 18/F, Block 3, Festival City, Tai Wai, Sha Tin, Hong Kong',
   pay:'PayMe by HSBC',
@@ -125,6 +126,21 @@ const SEED_ORDERS=[
   status:'In Assembly',
   tamperBlocked:false,
   lab:{tech:'Devon Lam (Lead Builder)',bios:'X870 Rev 3.12 · EXPO 6400 CL32',noise:'29.1 dBA',temp:'60°C',warranty:'3-Yr On-Site · WRT-8295HK'}
+ },
+ {
+  id:'FG-8190',
+  total:2250,
+  date:'2026-11-17',
+  items:'Custom 3D Build (Core Ultra 7 265K · RTX 5070 · Seasonic GX-850)',
+  itemsList:[{id:'custom-8190',type:'build',name:'Custom 3D Build · Stealth 265K',spec:'Core Ultra 7 265K · RTX 5070 12GB · Seasonic Focus GX-850 · Arctic Freezer III 360',price:2151,qty:1,asm:99,img:'img/products/x5.webp',items:['c1','m2','r2','g3','s2','p2','k4','x5','a1']}],
+  customer:'Daniel Kwok',
+  address:'Flat B, 22/F, Grand Promenade, Sai Wan Ho, Hong Kong',
+  pay:'Octopus',
+  delivery:'Mong Kok Sino Centre Showroom Pickup',
+  stage:4,
+  status:'24h OCCT Burn-In',
+  tamperBlocked:false,
+  lab:{tech:'Marcus Ho (Senior L3)',bios:'Z890 Rev 1804 · XMP 6400 CL32',noise:'28.2 dBA',temp:'51°C',warranty:'3-Yr On-Site · WRT-8190HK'}
  }
 ];
 
@@ -133,6 +149,16 @@ window.ensureSeedOrders=function(){
  try{list=JSON.parse(localStorage.getItem('forgeOrders')||'[]')}catch(e){list=[]}
  if(!Array.isArray(list))list=[];
  let changed=false;
+ list.forEach(o=>{
+  if(o&&Array.isArray(o.itemsList)){
+   o.itemsList.forEach(it=>{
+    if(it&&typeof it.img==='string'&&/^img\/.+\.png$/i.test(it.img)){
+     it.img=normalizeImgPath(it.img);
+     changed=true;
+    }
+   });
+  }
+ });
  SEED_ORDERS.forEach(seed=>{
   if(!list.some(o=>o&&o.id===seed.id)){
    list.push(JSON.parse(JSON.stringify(seed)));
@@ -160,7 +186,7 @@ window.ensureSeedOrders=function(){
     spec:String(x.spec||''),
     price:Math.max(0,Number(x.price)||0),
     qty:Math.max(1,Math.min(99,Math.floor(Number(x.qty)||1))),
-    img:String(x.img||'img/renders/hero_rig_studio.png'),
+    img:normalizeImgPath(String(x.img||'img/renders/hero_rig_studio.webp')),
     asm:x.asm!==undefined?Math.max(0,Number(x.asm)||0):(x.type==='build'?99:0),
     items:Array.isArray(x.items)?x.items.slice():null
    }));
@@ -199,7 +225,7 @@ window.ensureSeedOrders=function(){
    spec:String(item.spec||''),
    price,
    qty:Math.max(1,Math.min(99,Math.floor(Number(item.qty)||1))),
-   img:String(item.img||(id&&type!=='service'?`img/products/${id}.png`:'img/renders/hero_rig_studio.png')),
+   img:String(item.img||(id&&type!=='service'?`img/products/${id}.webp`:'img/renders/hero_rig_studio.webp')),
    asm:item.asm!==undefined?Math.max(0,Number(item.asm)||0):(type==='build'?99:0),
    items:Array.isArray(item.items)?item.items.slice():null
   };
@@ -267,7 +293,7 @@ window.ensureSeedOrders=function(){
   }
   const typeLabel={part:'Part',kit:'Prebuilt',build:'Custom 3D',service:'Service'};
   list.innerHTML=cart.map(it=>`<div class="drawer-item" data-key="${esc(it.key)}">
-   <img class="drawer-thumb" src="${esc(it.img)}" alt="${esc(it.name)}">
+   <img class="drawer-thumb" src="${esc(normalizeImgPath(it.img))}" alt="${esc(it.name)}" loading="lazy" decoding="async">
    <div class="drawer-meta">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
      <b style="font-size:.86rem;line-height:1.3">${esc(it.name)}</b>
@@ -287,14 +313,22 @@ window.ensureSeedOrders=function(){
     </div>
    </div>
   </div>`).join('');
-  const sub=cart.reduce((s,it)=>s+it.price*it.qty,0);
   const asm=cart.reduce((s,it)=>s+it.asm*it.qty,0);
+  const hwSub=cart.filter(it=>it.type!=='service').reduce((s,it)=>s+it.price*it.qty,0);
+  const svcEntries=cart.filter(it=>it.type==='service').map(it=>{
+   const catSvc=typeof serviceByIdOrName==='function'?(serviceByIdOrName(it.id)||serviceByIdOrName(it.name)):null;
+   return {svc:catSvc||{price:it.price,memberFree:false},qty:it.qty};
+  });
+  const pricing=typeof computeOrderPricing==='function'
+   ?computeOrderPricing({hwSub,serviceEntries:svcEntries,asm,isMember:!!user(),hasForge5:false})
+   :{sub:hwSub+svcEntries.reduce((s,e)=>s+e.svc.price*e.qty,0),asm,disc:0,total:hwSub+asm+svcEntries.reduce((s,e)=>s+e.svc.price*e.qty,0),label:''};
   if(foot){
    foot.innerHTML=`
     <div style="display:grid;gap:4px;font-size:.84rem">
-     <div style="display:flex;justify-content:space-between"><span class="mut">Subtotal</span><b style="font-family:var(--mono)">${money(sub)}</b></div>
-     ${asm?`<div style="display:flex;justify-content:space-between"><span class="mut">Lab Assembly &amp; Burn-In</span><b style="font-family:var(--mono)">${money(asm)}</b></div>`:''}
-     <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--line)"><span style="font-weight:600">Estimated Total</span><b class="price" style="font-size:1.08rem">${money(sub+asm)}</b></div>
+     <div style="display:flex;justify-content:space-between"><span class="mut">Subtotal (USD)</span><b style="font-family:var(--mono)">${money(pricing.sub)}</b></div>
+     ${pricing.asm?`<div style="display:flex;justify-content:space-between"><span class="mut">Lab Assembly &amp; Burn-In</span><b style="font-family:var(--mono)">${money(pricing.asm)}</b></div>`:''}
+     ${pricing.disc?`<div style="display:flex;justify-content:space-between"><span class="mut">${esc(pricing.label)}</span><b style="font-family:var(--mono);color:var(--ok)">-${money(pricing.disc)}</b></div>`:''}
+     <div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid var(--line)"><span style="font-weight:600">Estimated Total (USD)</span><b class="price" style="font-size:1.08rem">${money(pricing.total)}</b></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:8px">
      <a class="btn sm subtle" href="cart.html" style="justify-content:center">View Full Bag</a>
@@ -307,32 +341,35 @@ window.ensureSeedOrders=function(){
 
 function buildChrome(){
  const u=user(),th=getTheme();
+ const mainEl=document.querySelector('main');
+ if(mainEl&&!mainEl.id)mainEl.id='mainContent';
  const li=NAV.map(([h,t,sub])=>{
   if(h==='login.html'&&u)return `<li><a href="${u.role==='staff'?'staff-dashboard':'member-dashboard'}.html">${esc(u.name)}</a></li>`;
   const act=(h===here||(sub||[]).some(s=>s[0]===here))?' class="active"':'';
   return `<li><a href="${h}"${act}>${t}${sub?' ▾':''}</a>${sub?`<ul class="drop">${sub.map(s=>`<li><a href="${s[0]}">${s[1]}</a></li>`).join('')}</ul>`:''}</li>`}).join('');
  document.body.insertAdjacentHTML('afterbegin',`<div id="scrollBar"></div>
- <header><div class="wrap nav"><a class="logo" href="index.html">FOR<span>GE</span></a>
+ <a class="skip-link" href="#${mainEl?mainEl.id:'mainContent'}">Skip to main content</a>
+ <header><nav class="wrap nav" aria-label="Primary"><a class="logo" href="index.html">FOR<span>GE</span></a>
  <ul class="menu" id="menu">${li}</ul>
  <div class="nav-tools">
-  <button class="kbd-btn" id="themeBtn" title="Switch 3D accent lighting"><span class="swatch-dot" id="themeDot" style="background:${th.hex}"></span><span id="themeLbl">${th.label}</span></button>
-  <button class="kbd-btn" id="cmdBtn" title="Search pages and components">${ICONS.search}<span>Search</span><kbd>⌘K</kbd></button>
-  <button class="kbd-btn" id="sfxBtn" title="Toggle UI sound" aria-label="Toggle sound">${sfxOn?ICONS.volOn:ICONS.volOff}</button>
+  <button class="kbd-btn" id="themeBtn" type="button" title="Switch 3D accent lighting"><span class="swatch-dot" id="themeDot" style="background:${th.hex}"></span><span id="themeLbl">${th.label}</span></button>
+  <button class="kbd-btn" id="cmdBtn" type="button" title="Search pages and components">${ICONS.search}<span>Search</span><kbd>⌘K</kbd></button>
+  <button class="kbd-btn" id="sfxBtn" type="button" title="Toggle UI sound" aria-label="Toggle sound">${sfxOn?ICONS.volOn:ICONS.volOff}</button>
   <button class="kbd-btn cart-btn" id="cartBtn" type="button" title="Shopping Bag" aria-label="Open shopping bag">${ICONS.bag}<span>Bag</span><span class="cart-badge" id="cartBadge">0</span></button>
   <a class="btn sm solid" href="builder.html">Configure 3D</a>
-  <button class="burger" id="burger" aria-label="Open menu"><span></span></button>
- </div></div></header>`);
+  <button class="burger" id="burger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="menu"><span></span></button>
+ </div></nav></header>`);
  document.body.insertAdjacentHTML('beforeend',`<footer><div class="wrap fgrid">
  <div><a class="logo" href="index.html">FOR<span>GE</span></a><p class="mut" style="margin-top:10px;max-width:36ch">Custom workstations and gaming PCs built in Hong Kong since 2016. Configured in real-time 3D and stress-tested for 24 hours before dispatch.</p></div>
- <div><h4>Products</h4><ul><li><a href="builder.html">3D Configurator</a></li><li><a href="products.html">Components</a></li><li><a href="prebuilt.html">Prebuilt Systems</a></li><li><a href="cart.html">Shopping Bag</a></li><li><a href="services.html">Services</a></li></ul></div>
- <div><h4>Company</h4><ul><li><a href="about.html">About</a></li><li><a href="news.html">Build Guides</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="sitemap.html">Site Map</a></li></ul></div>
- <div><h4>Support</h4><ul><li><a href="order-detail.html">Track Order &amp; Invoice</a></li><li><a href="faq.html">FAQ</a></li><li><a href="complaint.html">Support Ticket</a></li><li><a href="contact.html">Contact</a></li><li><a href="staff-dashboard.html">Staff Operations Console</a></li></ul></div>
- </div><p class="copy"><span>© 2026 FORGE Custom PC Ltd. · Mong Kok Sino Centre Showroom · Kwun Tong ISO-9001 Burn-In Lab · 3-Yr On-Site HK Warranty · Visa / Mastercard / FPS / PayMe / Octopus</span><span><a href="sitemap.html">Site Map</a> · <a href="faq.html">Warranty &amp; Terms</a></span></p></footer>
- <button id="toTop" aria-label="Back to top">↑</button>
+ <div><p class="foot-h">Products</p><ul><li><a href="builder.html">3D Configurator</a></li><li><a href="products.html">Components</a></li><li><a href="prebuilt.html">Prebuilt Systems</a></li><li><a href="cart.html">Shopping Bag</a></li><li><a href="services.html">Services</a></li></ul></div>
+ <div><p class="foot-h">Company</p><ul><li><a href="about.html">About</a></li><li><a href="news.html">Build Guides</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="sitemap.html">Site Map</a></li></ul></div>
+ <div><p class="foot-h">Support</p><ul><li><a href="order-detail.html">Track Order &amp; Invoice</a></li><li><a href="faq.html">FAQ</a></li><li><a href="complaint.html">Support Ticket</a></li><li><a href="contact.html">Contact</a></li><li><a href="staff-dashboard.html">Staff Operations Console</a></li></ul></div>
+ </div><p class="copy"><span>© 2026 FORGE Custom PC Ltd. · Mong Kok Sino Centre Showroom · Kwun Tong ISO-9001 Burn-In Lab · 3-Yr On-Site HK Warranty · All prices in USD</span><span><a href="#" id="openShortcutsLink">Shortcuts (?)</a> · <a href="sitemap.html">Site Map</a> · <a href="faq.html">Warranty &amp; Terms</a></span></p></footer>
+ <button id="toTop" type="button" aria-label="Back to top">↑</button>
  <div class="drawer-backdrop" id="cartDrawerBackdrop"></div>
  <aside class="drawer" id="cartDrawer" aria-label="Shopping Bag Drawer">
   <div class="drawer-head">
-   <div><h3 style="margin:0;font-size:1.05rem">Shopping Bag</h3><small class="mut" id="cartDrawerCount" style="font-family:var(--mono);font-size:.74rem">0 item(s)</small></div>
+   <div><p style="margin:0;font-size:1.05rem;font-weight:600;color:var(--txt)">Shopping Bag</p><small class="mut" id="cartDrawerCount" style="font-family:var(--mono);font-size:.74rem">0 item(s)</small></div>
    <button class="drawer-close" id="cartDrawerClose" type="button" aria-label="Close shopping bag">${ICONS.x}</button>
   </div>
   <div class="drawer-body" id="cartDrawerList"></div>
@@ -341,9 +378,51 @@ function buildChrome(){
  <div class="cmdk-backdrop" id="cmdk"><div class="cmdk" onclick="event.stopPropagation()">
   <div class="cmdk-in"><span style="display:inline-flex;width:16px;height:16px;color:var(--mut)">${ICONS.search}</span><input id="cmdkIn" placeholder="Search 53 components, prebuilt systems, or pages…" autocomplete="off"><kbd style="font-family:var(--mono);font-size:.7rem;color:var(--mut)">ESC</kbd></div>
   <div class="cmdk-list" id="cmdkList"></div>
- </div></div>`);
+ </div></div>
+ <div class="modal" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+  <div class="card" style="max-width:480px" onclick="event.stopPropagation()">
+   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <p id="shortcutsTitle" style="font-size:1.1rem;font-weight:600;color:var(--txt)">Keyboard Shortcuts &amp; 3D Controls</p>
+    <button type="button" class="btn sm subtle" id="closeShortcutsBtn">Close</button>
+   </div>
+   <div class="shortcut-list">
+    <div class="shortcut-row"><span>Open Quick Search Palette</span><kbd>⌘K / Ctrl+K</kbd></div>
+    <div class="shortcut-row"><span>Toggle Shortcuts Overlay</span><kbd>?</kbd></div>
+    <div class="shortcut-row"><span>Close Modals, Bag Drawer or Menu</span><kbd>Esc</kbd></div>
+    <div class="shortcut-row"><span>Orbit &amp; Zoom Live 3D Rig</span><kbd>Drag / Scroll</kbd></div>
+    <div class="shortcut-row"><span>Inspect Part in 3D Configurator</span><kbd>Click 3D Part</kbd></div>
+   </div>
+   <p class="mut" style="font-size:.78rem">Tip: Use Tab from the top of any page to jump straight to main content via the Skip Link.</p>
+  </div>
+ </div>`);
 
- const b=$('#burger'),m=$('#menu');b.onclick=()=>{b.classList.toggle('open');m.classList.toggle('open');sfx()};
+ const b=$('#burger'),m=$('#menu'),hdr=$('header');
+ const closeMenu=()=>{
+  b.classList.remove('open');
+  m.classList.remove('open');
+  b.setAttribute('aria-expanded','false');
+ };
+ window.closeMobileMenu=closeMenu;
+ b.onclick=()=>{
+  const open=m.classList.toggle('open');
+  b.classList.toggle('open',open);
+  b.setAttribute('aria-expanded',open?'true':'false');
+  sfx();
+ };
+ m.addEventListener('click',e=>{if(e.target.closest('a'))closeMenu()});
+ document.addEventListener('click',e=>{if(m.classList.contains('open')&&hdr&&!hdr.contains(e.target))closeMenu()});
+
+ const scModal=$('#shortcutsModal');
+ const toggleShortcuts=force=>{
+  const show=force!==undefined?!!force:!scModal.classList.contains('show');
+  scModal.classList.toggle('show',show);
+  if(show)sfx();
+ };
+ $('#closeShortcutsBtn').onclick=()=>toggleShortcuts(false);
+ scModal.onclick=()=>toggleShortcuts(false);
+ $('#openShortcutsLink').onclick=e=>{e.preventDefault();toggleShortcuts(true)};
+ window.toggleShortcutsModal=toggleShortcuts;
+
  $('#sfxBtn').onclick=e=>{sfxOn=!sfxOn;localStorage.setItem('forgeSfx',sfxOn?'1':'0');e.currentTarget.innerHTML=sfxOn?ICONS.volOn:ICONS.volOff;if(sfxOn)sfx('install');toast(sfxOn?'UI sound enabled':'UI sound muted')};
  $('#themeBtn').onclick=()=>{
   const idx=(THEMES.findIndex(t=>t.id===curThemeId)+1)%THEMES.length;
@@ -440,10 +519,23 @@ function initCmdK(){
    if(a)location.href=a.getAttribute('href');
   }
  };
- addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();bd.classList.contains('show')?close():open()}else if(e.key==='Escape'){close();if(window.forgeCart)window.forgeCart.closeCartDrawer()}});
+ addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();bd.classList.contains('show')?close():open()}
+  else if(e.key==='?'&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
+   const tag=(document.activeElement&&document.activeElement.tagName||'').toLowerCase();
+   if(!['input','textarea','select'].includes(tag)&&!(document.activeElement&&document.activeElement.isContentEditable)){
+    e.preventDefault();if(window.toggleShortcutsModal)window.toggleShortcutsModal();
+   }
+  }else if(e.key==='Escape'){
+   close();
+   if(window.forgeCart)window.forgeCart.closeCartDrawer();
+   if(window.closeMobileMenu)window.closeMobileMenu();
+   if(window.toggleShortcutsModal)window.toggleShortcutsModal(false);
+  }
+ });
 }
 
-function initAccordion(){$$('.acc-h').forEach(h=>h.onclick=()=>{const a=h.parentElement,b=h.nextElementSibling,open=a.classList.toggle('open');b.style.maxHeight=open?b.scrollHeight+40+'px':0;sfx()})}
+function initAccordion(){$$('.acc-h').forEach(h=>{h.setAttribute('aria-expanded','false');h.onclick=()=>{const a=h.parentElement,b=h.nextElementSibling,open=a.classList.toggle('open');h.setAttribute('aria-expanded',open?'true':'false');b.style.maxHeight=open?b.scrollHeight+40+'px':0;sfx()}})}
 function initSlider(){$$('.slider').forEach(s=>{
  const track=$('.slides',s),n=track.children.length,dots=$('.dots',s);let i=0,t;
  dots.innerHTML=[...Array(n)].map((_,k)=>`<button aria-label="Slide ${k+1}"></button>`).join('');
@@ -471,7 +563,7 @@ function initReveal(){
  const mo=new MutationObserver(muts=>{muts.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1){if(n.classList.contains('reveal'))observeAll(n.parentElement||document);else observeAll(n)}}))});
  mo.observe(document.body,{childList:true,subtree:true});
 }
-function initCounters(){$$('[data-count]').forEach(el=>{const end=+el.dataset.count,pre=el.dataset.pre||'',suf=el.dataset.suf||'';let v=0;const st=()=>{v+=Math.ceil(end/50);if(v>=end)v=end;el.textContent=pre+v.toLocaleString('en-US')+suf;if(v<end)requestAnimationFrame(st)};new IntersectionObserver((e,o)=>{if(e[0].isIntersecting){st();o.disconnect()}}).observe(el)})}
+function initCounters(){$$('[data-count]').forEach(el=>{const end=+el.dataset.count,pre=el.dataset.pre||'',suf=el.dataset.suf||'';const run=()=>{const t0=performance.now(),dur=700;const st=now=>{const p=Math.min(1,(now-t0)/dur),v=Math.round(end*(1-Math.pow(1-p,3)));el.textContent=pre+v.toLocaleString('en-US')+suf;if(p<1)requestAnimationFrame(st);else el.textContent=pre+end.toLocaleString('en-US')+suf};requestAnimationFrame(st)};new IntersectionObserver((e,o)=>{if(e[0].isIntersecting){run();o.disconnect()}}).observe(el)})}
 
 function validate(form){let ok=true;$$('[data-rule]',form).forEach(f=>{const v=f.value.trim();let msg='';
  f.dataset.rule.split('|').forEach(r=>{const[k,a]=r.split(':');
@@ -483,7 +575,7 @@ function validate(form){let ok=true;$$('[data-rule]',form).forEach(f=>{const v=f
   if(k==='pw'&&v&&!(/[A-Z]/.test(v)&&/\d/.test(v)&&v.length>=8))msg='8+ chars with a capital letter and a number'});
  f.classList.toggle('bad',!!msg);f.classList.toggle('good',!msg&&!!v);const e=f.parentElement.querySelector('.err');if(e)e.textContent=msg;if(msg)ok=false});if(!ok)sfx('warn');return ok}
 function liveValidate(form){$$('[data-rule]',form).forEach(f=>f.addEventListener('blur',()=>validate(form)&&0))}
-function fillResult(tbody,labels){const p=qs();tbody.innerHTML='';Object.entries(labels).forEach(([k,l])=>{if(p[k]===undefined)return;const tr=document.createElement('tr');const a=document.createElement('td'),b=document.createElement('td');a.textContent=l;b.textContent=k.includes('pass')?'••••••••':p[k]||'—';tr.append(a,b);tbody.append(tr)})}
+function fillResult(tbody,labels){const p=qs();tbody.innerHTML='';Object.entries(labels).forEach(([k,l])=>{if(p[k]===undefined)return;const tr=document.createElement('tr');const a=document.createElement('th');a.scope='row';const b=document.createElement('td');a.textContent=l;b.textContent=k.includes('pass')?'••••••••':p[k]||'—';tr.append(a,b);tbody.append(tr)})}
 const ticket=p=>p+'-'+Date.now().toString(36).toUpperCase().slice(-6);
 
 document.addEventListener('DOMContentLoaded',()=>{buildChrome();initAccordion();initSlider();initReveal();initCounters()});

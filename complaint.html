@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Complaint | FORGE</title>
 <meta name="description" content="Submit a complaint to FORGE.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,7 +17,7 @@
  <div class="field"><label for="cat">Category *</label><select id="cat" name="cat" data-rule="req"><option value="">Select…</option><option>Faulty product</option><option>Late delivery</option><option>Staff service</option><option>Billing</option><option>Website</option></select><div class="err"></div></div></div>
  <div class="field"><label>Severity</label><div style="display:flex;gap:16px;flex-wrap:wrap"><label class="chk"><input type="radio" name="sev" value="Low" checked> Low</label><label class="chk"><input type="radio" name="sev" value="Medium"> Medium</label><label class="chk"><input type="radio" name="sev" value="High"> High</label></div></div>
  <div class="field"><label for="desc">Describe the issue *</label><textarea id="desc" name="desc" rows="5" data-rule="req|min:20"></textarea><div class="err"></div></div>
- <div class="field"><label for="file">Attach a photo (optional, max 2MB)</label><input type="file" id="file" accept="image/png,image/jpeg"><img id="prev" alt="" style="display:none;max-height:160px;margin-top:10px;border-radius:10px;border:1px solid var(--line)"></div>
+ <div class="field"><label for="file">Attach a photo (optional, max 2MB)</label><input type="file" id="file" accept="image/png,image/jpeg"><img id="prev" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Uploaded attachment preview" style="display:none;max-height:160px;margin-top:10px;border-radius:10px;border:1px solid var(--line)"></div>
  <div class="field"><label for="res">Preferred resolution</label><select id="res" name="res"><option>Repair</option><option>Replacement</option><option>Refund</option><option>Apology / explanation</option></select></div>
  <button class="btn subtle" style="width:100%;justify-content:center">Submit complaint</button>
 </form></div></section>

@@ -4,19 +4,20 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Order Confirmation | FORGE</title>
 <meta name="description" content="Review the products, custom 3D builds, shopping bag items, or services you are purchasing from FORGE.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230A0A0A%27/%3E%3Crect x=%277%27 y=%277%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23E5A93C%27/%3E%3Crect x=%2717%27 y=%2717%27 width=%278%27 height=%278%27 rx=%272%27 fill=%27%23F5F5F5%27/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <main>
-<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="cart.html">Shopping Bag</a> / Order Confirmation</p><h1>Confirm Your <span class="grad">Order</span></h1><p>Review your selected hardware, custom 3D configuration, shopping bag, or booked engineering service before checkout.</p></div></section>
+<section class="phero"><div class="wrap"><p class="crumb"><a href="index.html">Home</a> / <a href="cart.html">Shopping Bag</a> / Order Confirmation</p><h1>Confirm Your <span class="grad">Order</span></h1><p>Review your selected hardware, custom 3D configuration, shopping bag, or booked engineering service before checkout. All prices in USD.</p></div></section>
 <section style="padding-top:28px"><div class="wrap g2" style="align-items:start">
- <div><div id="img"></div><div class="tblwrap"><table><thead><tr><th>Item / Service</th><th>Qty</th><th>Price</th></tr></thead><tbody id="items"></tbody></table></div></div>
- <div class="card"><h3>Order Summary</h3>
+ <div><div id="priceAlert"></div><div id="img"></div><div class="tblwrap"><table><thead><tr><th scope="col">Item / Service</th><th scope="col">Qty</th><th scope="col">Price (USD)</th></tr></thead><tbody id="items"></tbody></table></div></div>
+ <div class="card"><h2 style="font-size:1.25rem;margin-bottom:8px">Order Summary</h2>
   <table style="background:none;margin-top:8px"><tbody>
-   <tr><td>Subtotal</td><td id="sub" style="text-align:right;font-family:var(--mono)"></td></tr>
-   <tr><td>Lab Assembly &amp; Burn-In Testing</td><td id="asm" style="text-align:right;font-family:var(--mono)"></td></tr>
-   <tr><td id="dl">Member discount (5%)</td><td id="disc" style="text-align:right;font-family:var(--mono)"></td></tr>
-   <tr><td><b>Total Payable (USD)</b></td><td class="price" id="tot" style="text-align:right"></td></tr>
+   <tr><th scope="row">Subtotal (USD)</th><td id="sub" style="text-align:right;font-family:var(--mono)"></td></tr>
+   <tr><th scope="row">Lab Assembly &amp; Burn-In Testing</th><td id="asm" style="text-align:right;font-family:var(--mono)"></td></tr>
+   <tr><th scope="row" id="dl">Member discount</th><td id="disc" style="text-align:right;font-family:var(--mono);color:var(--ok)"></td></tr>
+   <tr><th scope="row"><b style="color:var(--txt)">Total Payable (USD)</b></th><td class="price" id="tot" style="text-align:right"></td></tr>
   </tbody></table>
   <form id="co" action="checkout-success.html" method="get" style="margin-top:20px;display:grid;gap:14px" novalidate>
    <input type="hidden" name="total" id="ht"><input type="hidden" name="items" id="hi"><input type="hidden" name="spec" id="hspec"><input type="hidden" name="src" id="hsrc"><input type="hidden" name="promo" id="hpromo">
@@ -24,28 +25,55 @@
    <div class="field"><label for="deliv">Delivery Method</label><select id="deliv" name="delivery"><option value="SF Express Insured 5-Day Courier">SF Express Insured 5-Day Courier (Free)</option><option value="Mong Kok Sino Centre Showroom Pickup">Mong Kok Sino Centre Showroom Pickup (Ready in 4 Days)</option></select></div>
    <div class="field"><label for="a">Delivery / On-Site Service Address</label><input id="a" name="address" placeholder="Unit, Building, Street, District, Hong Kong" data-rule="req"><div class="err"></div></div>
    <div class="field"><label for="pay">Payment Method</label><select id="pay" name="pay"><option>Visa / Mastercard</option><option>FPS (Faster Payment System)</option><option>PayMe by HSBC</option><option>Octopus</option></select></div>
-   <button class="btn solid" style="width:100%;justify-content:center">Confirm &amp; Place Order →</button>
-  </form><p class="mut center" style="font-size:.8rem;margin-top:12px">Catalog-verified checkout · 3-Year On-Site HK Warranty.</p></div>
+   <button class="btn solid" id="submitBtn" style="width:100%;justify-content:center">Confirm &amp; Place Order →</button>
+  </form><p class="mut center" style="font-size:.8rem;margin-top:12px">Authoritative USD catalog pricing · 3-Year On-Site HK Warranty.</p></div>
 </div></section>
 </main>
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
 <script>
 const q = qs();
-let rows = [], img = '', asm = 0, spec = '';
+let rows = [], img = '', asm = 0, spec = '', hwSub = 0;
+const serviceEntries = [];
+
+function showPriceAlert(msg) {
+  $('#priceAlert').innerHTML = `<div role="alert" style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.45);border-radius:10px;padding:14px 16px;text-align:left;margin-bottom:16px;color:#FECACA"><div style="font-family:var(--mono);font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--danger);font-weight:600;margin-bottom:4px">ORDER PRICE VERIFICATION ALERT</div><p style="font-size:.86rem;line-height:1.5;color:#FCA5A5">${esc(msg)}</p></div>`;
+}
 
 if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
   const cart = forgeCart.getCart();
   const tokens = [];
   cart.forEach(it => {
     const qty = Math.max(1, Number(it.qty) || 1);
-    const linePrice = (Number(it.price) || 0) * qty;
-    rows.push([it.name, qty, linePrice]);
-    asm += (Number(it.asm) || 0) * qty;
-    if (it.type === 'kit' && it.id) tokens.push(`k:${it.id}:${qty}`);
-    else if (it.type === 'part' && it.id) tokens.push(`p:${it.id}:${qty}`);
-    else if (it.type === 'service') tokens.push(`s:${Math.max(0, Number(it.price) || 0)}:${qty}`);
-    else if (it.type === 'build' && Array.isArray(it.items) && it.items.length) tokens.push(`b:${it.items.join('+')}:${qty}`);
+    if (it.type === 'service') {
+      const svc = serviceByIdOrName(it.id) || serviceByIdOrName(it.name);
+      if (svc) {
+        rows.push([svc.name + ' (FORGE Certified Service)', qty, svc.price * qty]);
+        serviceEntries.push({ svc, qty });
+        tokens.push(`s:${svc.id}:${qty}`);
+      }
+    } else if (it.type === 'kit' && it.id && byId(it.id)?.parts) {
+      const k = byId(it.id);
+      const linePrice = kitPrice(k) * qty;
+      rows.push([k.name + ' (Prebuilt System)', qty, linePrice]);
+      hwSub += linePrice;
+      tokens.push(`k:${k.id}:${qty}`);
+    } else if (it.type === 'part' && it.id && byId(it.id)) {
+      const p = byId(it.id);
+      const linePrice = p.price * qty;
+      rows.push([p.name, qty, linePrice]);
+      hwSub += linePrice;
+      tokens.push(`p:${p.id}:${qty}`);
+    } else if (it.type === 'build' && Array.isArray(it.items) && it.items.length) {
+      const valid = it.items.map(byId).filter(Boolean);
+      const buildUnit = valid.reduce((s, p) => s + (p.price || 0), 0);
+      if (valid.length) {
+        rows.push([it.name, qty, buildUnit * qty]);
+        hwSub += buildUnit * qty;
+        asm += 99 * qty;
+        tokens.push(`b:${valid.map(p => p.id).join('+')}:${qty}`);
+      }
+    }
   });
   spec = tokens.length ? `cart:${tokens.join('|')}` : '';
   const buildItem = cart.find(it => it.type === 'build' && it.img && it.img.startsWith('data:'));
@@ -54,34 +82,40 @@ if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
   } else if (cart.length) {
     const thumbs = cart.slice(0, 4).map(it => `
       <div class="pimg" style="height:130px;margin:0;padding:10px;display:flex;align-items:center;justify-content:center">
-        <img src="${esc(it.img)}" style="width:100%;height:100%;object-fit:contain" alt="${esc(it.name)}">
+        <img src="${esc(normalizeImgPath(it.img))}" style="width:100%;height:100%;object-fit:contain" alt="${esc(it.name)}" loading="lazy" decoding="async">
       </div>`).join('');
     $('#img').innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px">${thumbs}</div>`;
   }
-} else if (q.service) {
-  const sPrice = Math.max(0, +q.price || 49);
-  const sQty = Math.max(1, +q.qty || 1);
-  rows = [[q.service + ' (FORGE Certified Service)', sQty, sPrice * sQty]];
-  asm = 0;
-  spec = `svc:${sPrice}:${sQty}`;
-  $('#img').innerHTML = `<div class="pimg" style="height:240px;overflow:hidden;border-radius:12px;margin-bottom:16px"><img src="img/renders/hero_rig_studio.png" style="width:100%;height:100%;object-fit:cover" alt="${esc(q.service)}"></div>`;
-} else if (q.id) {
-  const p = byId(q.id), n = Math.max(1, +q.qty || 1);
-  if (p) {
-    if (p.parts) {
-      rows = [[p.name + ' (Prebuilt System)', n, kitPrice(p) * n]];
-      asm = 0;
-    } else {
-      rows = [[p.name, n, p.price * n]];
+} else if (q.svc || q.service) {
+  const svc = serviceByIdOrName(q.svc || q.service);
+  const sQty = Math.max(1, Math.min(20, Math.floor(Number(q.qty) || 1)));
+  if (svc) {
+    if (q.price !== undefined && q.price !== '' && Math.round(Number(q.price)) !== svc.price) {
+      const rawUrlP = Number.isFinite(Number(q.price)) ? money(Number(q.price)) : String(q.price);
+      showPriceAlert(`URL price parameter (${rawUrlP}) did not match the official catalog rate for ${svc.name} — authoritative catalog rate (${money(svc.price)} USD) enforced.`);
     }
+    rows = [[svc.name + ' (FORGE Certified Service)', sQty, svc.price * sQty]];
+    serviceEntries.push({ svc, qty: sQty });
+    asm = 0;
+    spec = `svc:${svc.id}:${sQty}`;
+    $('#img').innerHTML = `<div class="pimg" style="height:240px;overflow:hidden;border-radius:12px;margin-bottom:16px"><img src="img/renders/hero_rig_studio.webp" style="width:100%;height:100%;object-fit:cover" alt="${esc(svc.name)}" loading="lazy" decoding="async"></div>`;
+  } else {
+    showPriceAlert(`Requested service "${q.svc || q.service}" was not found in the authoritative FORGE service catalog. Please select an official package from Services.`);
+  }
+} else if (q.id) {
+  const p = byId(q.id), n = Math.max(1, Math.min(99, Math.floor(Number(q.qty) || 1)));
+  if (p) {
+    const linePrice = (p.parts ? kitPrice(p) : p.price) * n;
+    rows = [[p.parts ? p.name + ' (Prebuilt System)' : p.name, n, linePrice]];
+    hwSub += linePrice;
     spec = `${p.id}:${n}`;
     $('#img').innerHTML = `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
         <div class="pimg" style="height:210px;margin:0;padding:14px;display:flex;align-items:center;justify-content:center">
-          <img src="img/products/${p.id}.png" style="width:100%;height:100%;object-fit:contain" alt="${esc(p.name)}">
+          <img src="img/products/${p.id}.webp" style="width:100%;height:100%;object-fit:contain" alt="${esc(p.name)}" loading="lazy" decoding="async">
         </div>
         <div class="pimg" style="height:210px;margin:0">
-          <img src="${p.parts ? 'img/renders/hero_rig_studio.png' : 'img/installed/' + p.id + '.png'}" style="width:100%;height:100%;object-fit:cover" alt="${esc(p.name)} Installed Effect">
+          <img src="${p.parts ? 'img/renders/hero_rig_studio.webp' : 'img/installed/' + p.id + '.webp'}" style="width:100%;height:100%;object-fit:cover" alt="${esc(p.name)} Installed Effect" loading="lazy" decoding="async">
         </div>
       </div>`;
   }
@@ -90,6 +124,7 @@ if (q.src === 'cart' && typeof forgeCart !== 'undefined') {
   if (o && o.items && o.items.length) {
     const validParts = o.items.map(i => byId(i)).filter(Boolean);
     rows = validParts.map(p => [p.name, 1, p.price]);
+    hwSub = validParts.reduce((s, p) => s + p.price, 0);
     img = o.img;
     asm = 99;
     spec = validParts.length ? `build:${validParts.map(p => p.id).join(',')}` : '';
@@ -106,25 +141,31 @@ if (img) {
   $('#img').innerHTML = `<img src="${img}" alt="Your custom 3D PC build" style="border-radius:12px;border:1px solid var(--line);margin-bottom:16px;background:#111111;width:100%">`;
 }
 
-const sub = rows.reduce((s, r) => s + r[2], 0);
 const u = user();
 const promoCode = String(q.promo || '').trim().toUpperCase();
 const hasForge5 = promoCode === 'FORGE5';
-const disc = (u || hasForge5) ? Math.round(sub * 0.05) : 0;
-const tot = sub + asm - disc;
+const pricing = computeOrderPricing({
+  hwSub,
+  serviceEntries,
+  asm,
+  isMember: !!u,
+  hasForge5
+});
 
-$('#sub').textContent = money(sub);
-$('#asm').textContent = money(asm);
-$('#disc').textContent = '-' + money(disc);
-if (u && hasForge5) $('#dl').textContent = 'Member & FORGE5 discount (5%)';
-else if (hasForge5) $('#dl').textContent = 'Promo code FORGE5 (5% off)';
-else if (!u) $('#dl').innerHTML = 'Member discount (<a href="login.html">log in for 5% off</a>)';
+$('#sub').textContent = money(pricing.sub);
+$('#asm').textContent = money(pricing.asm);
+$('#disc').textContent = '-' + money(pricing.disc);
+if (u || hasForge5) {
+  $('#dl').textContent = pricing.label;
+} else {
+  $('#dl').innerHTML = 'Member discount (<a href="login.html">log in: 5% hardware · Free diagnostics · 10% services</a>)';
+}
 
-$('#tot').textContent = money(tot);
-$('#ht').value = tot;
+$('#tot').textContent = money(pricing.total);
+$('#ht').value = pricing.total;
 $('#hi').value = rows.map(r => r[0]).join('; ');
 $('#hspec').value = spec;
-$('#hsrc').value = q.src || (q.service ? 'service' : (q.id ? 'catalog' : 'builder'));
+$('#hsrc').value = q.src || ((q.svc || q.service) ? 'service' : (q.id ? 'catalog' : 'builder'));
 $('#hpromo').value = hasForge5 ? 'FORGE5' : '';
 
 if (q.delivery === 'pickup') {
