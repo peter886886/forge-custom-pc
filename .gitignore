@@ -2,4 +2,6 @@
 Thumbs.db
 *.tmp
 *.log
+*.blend
+*.blend1
 img/products_backup/
